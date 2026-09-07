@@ -1,0 +1,345 @@
+{
+  "meta": {
+    "title": "2026 K예술영재 프로젝트",
+    "badge": "2026"
+  },
+  "sections": {
+    "hero": {
+      "bg": {
+        "type": "youtube",
+        "url": "https://youtu.be/Qk_MGeoiFxM",
+        "overlay": 0.25
+      },
+      "eyebrow": "문화체육관광부 주최 · 2026",
+      "title": "잘하는 아이에서,\n표현하는 아티스트로",
+      "subtitle": "음악·무용·전통예술·미술, 네 분야의 예술영재를 전국에서 발굴하고\n워크숍부터 겨울 캠프까지 국가가 지원하는 성장의 무대를 엽니다.",
+      "chips": [
+        "모집기간 2026.5.18–6.5",
+        "대상 초4~고2",
+        "4개 분야",
+        "참가비 무료"
+      ]
+    },
+    "intro": {
+      "bg": {
+        "type": "gradient",
+        "url": "",
+        "overlay": 0.35
+      },
+      "eyebrow": "About",
+      "heading": "왜 지금, 예술영재인가",
+      "desc": "세계는 이미 대한민국 젊은 예술가들의 성취에 주목하고 있습니다. 하지만 우리는 그들의 '시작'을 본 적이 없습니다.",
+      "quote": "\"재능 있는 아이\"에서, 자신의 예술적 정체성을 갖고\n미래를 준비하는 \"아티스트\"로의 전환점을 제공합니다.",
+      "quoteSource": "2026 K예술영재 프로젝트 사업 목적",
+      "figures": [
+        {
+          "name": "전민철",
+          "role": "마린스키 발레단 수석무용수"
+        },
+        {
+          "name": "조성진",
+          "role": "쇼팽 국제 콩쿠르 우승 피아니스트"
+        },
+        {
+          "name": "임윤찬",
+          "role": "반 클라이번 국제 콩쿠르 우승 피아니스트"
+        },
+        {
+          "name": "양인모",
+          "role": "파가니니 국제 콩쿠르 한국인 최초 우승자"
+        }
+      ],
+      "stats": [
+        {
+          "n": "200명",
+          "l": "전국 공모 선발 인원 (내외)"
+        },
+        {
+          "n": "4개",
+          "l": "모집 분야"
+        },
+        {
+          "n": "6박7일",
+          "l": "겨울 집중 캠프 (광주)"
+        },
+        {
+          "n": "무료",
+          "l": "문화체육관광부 지원"
+        }
+      ]
+    },
+    "fields": {
+      "bg": {
+        "type": "gradient",
+        "url": "",
+        "overlay": 0.35
+      },
+      "eyebrow": "Programs",
+      "heading": "모집분야",
+      "desc": "1인 1개 전공만 지원 가능하며, 세부 전공별 모집 대상 출생연도가 상이합니다.",
+      "cards": [
+        {
+          "accent": "music",
+          "tag": "Music",
+          "name": "음악",
+          "en": "Instrumental",
+          "items": [
+            "피아노",
+            "바이올린 · 비올라 · 첼로"
+          ],
+          "age": "2009.1.1 ~ 2016.12.31"
+        },
+        {
+          "accent": "dance",
+          "tag": "Dance",
+          "name": "무용",
+          "en": "Ballet",
+          "items": [
+            "발레 — bar & center work",
+            "발레 — 자유 작품 영상"
+          ],
+          "age": "2010.1.1 ~ 2015.12.31"
+        },
+        {
+          "accent": "trad",
+          "tag": "Traditional Arts",
+          "name": "전통예술",
+          "en": "기악 · 성악 · 연희",
+          "items": [
+            "가야금 · 거문고 · 해금",
+            "타악(설장구) · 판소리 · 연희"
+          ],
+          "age": "2009.1.1 ~ 2015.12.31"
+        },
+        {
+          "accent": "art",
+          "tag": "Visual Arts",
+          "name": "미술",
+          "en": "Visual Arts",
+          "items": [
+            "시각예술 — 포트폴리오(10p)",
+            "지원에세이 제출"
+          ],
+          "age": "2010.1.1 ~ 2013.12.31"
+        }
+      ]
+    },
+    "journey": {
+      "bg": {
+        "type": "gradient",
+        "url": "",
+        "overlay": 0.35
+      },
+      "eyebrow": "Journey",
+      "heading": "성장의 여정",
+      "desc": "한 번의 워크숍으로 끝나지 않는, 세 단계로 이어지는 성장 프로그램입니다.",
+      "steps": [
+        {
+          "when": "2026. 7 – 8월",
+          "title": "K예술영재 발굴 워크숍",
+          "desc": "분야별 캠퍼스에서 진행되는 집중 워크숍. 개인레슨, 마스터클래스, 저명 예술가와의 만남. 교육비·식비 무료 (비숙박).",
+          "tags": [
+            "음악 · 서초 캠퍼스",
+            "무용 · 광주 캠퍼스",
+            "전통예술 · 석관동",
+            "미술 · KAIST"
+          ]
+        },
+        {
+          "when": "2026. 9 – 12월",
+          "title": "K예술영재 심화 멘토링",
+          "desc": "워크숍 수료자 중 참여도·성장 가능성이 돋보이는 참가자에게 온·오프라인 병행 멘토링과 맞춤 코칭을 제공합니다.",
+          "tags": [
+            "개인별 맞춤 코칭",
+            "크로스오버 프로젝트"
+          ]
+        },
+        {
+          "when": "2027. 1.24 – 1.30 · 6박7일",
+          "title": "K예술영재 겨울 집중 캠프",
+          "desc": "광주광역시 숙박형 캠프. 마스터클래스와 창작 레지던시를 거쳐 하이라이트 갈라 공연으로 성장을 완성, 인증서를 수여합니다.",
+          "tags": [
+            "마스터클래스",
+            "갈라 공연",
+            "인증서 발급"
+          ]
+        }
+      ]
+    },
+    "board": {
+      "bg": {
+        "type": "gradient",
+        "url": "",
+        "overlay": 0.35
+      },
+      "eyebrow": "Apply",
+      "heading": "지원 및 안내",
+      "desc": "2026학년도 한국예술영재교육원 재원생은 지원할 수 없으며, 타 분야 중복 지원 시 전부 무효 처리됩니다.",
+      "moreUrl": "https://kriga.karts.ac.kr/",
+      "rows": [
+        {
+          "title": "모집 공고",
+          "sub": "전공별 시험 내용(제출 내용) 확인",
+          "date": "5.18 – 6.5"
+        },
+        {
+          "title": "서류 접수",
+          "sub": "등기우편 제출 · 마감일 소인분까지 인정",
+          "date": "6.1 – 6.5"
+        },
+        {
+          "title": "합격자 발표",
+          "sub": "한국예술영재교육연구원 홈페이지 공지",
+          "date": "6월 중"
+        },
+        {
+          "title": "발굴 워크숍",
+          "sub": "분야별 캠퍼스에서 진행",
+          "date": "7 – 8월"
+        },
+        {
+          "title": "겨울 집중 캠프",
+          "sub": "6박7일 · 광주광역시",
+          "date": "'27.1.24–30"
+        }
+      ],
+      "info": {
+        "title": "제출 서류",
+        "lines": [
+          {
+            "k": "공통",
+            "v": "지원서 및 연구 참여 동의서"
+          },
+          {
+            "k": "음악·무용·전통예술",
+            "v": "자기소개서 + 실기 동영상"
+          },
+          {
+            "k": "미술",
+            "v": "지원에세이 + 포트폴리오(6부)"
+          },
+          {
+            "k": "접수 방법",
+            "v": "등기우편 (소인 인정)"
+          },
+          {
+            "k": "문의",
+            "v": "kgifted2026@naver.com",
+            "link": "mailto:kgifted2026@naver.com"
+          },
+          {
+            "k": "홈페이지",
+            "v": "kriga.karts.ac.kr",
+            "link": "https://kriga.karts.ac.kr/"
+          }
+        ]
+      }
+    },
+    "gallery": {
+      "bg": {
+        "type": "gradient",
+        "url": "",
+        "overlay": 0.35
+      },
+      "eyebrow": "Media",
+      "heading": "갤러리 · 성장 기록",
+      "desc": "연습에서 무대까지 — 관찰의 시선으로 담는 아이들의 성장 다큐멘터리.",
+      "channelUrl": "https://www.youtube.com/@kartsgifted",
+      "items": [
+        {
+          "caption": "음악 · 발굴 워크숍",
+          "color": "music",
+          "link": "https://www.youtube.com/@kartsgifted",
+          "bgImage": ""
+        },
+        {
+          "caption": "무용 · 발레 워크숍",
+          "color": "dance",
+          "link": "https://www.youtube.com/@kartsgifted",
+          "bgImage": ""
+        },
+        {
+          "caption": "전통예술 · 워크숍",
+          "color": "trad",
+          "link": "https://www.youtube.com/@kartsgifted",
+          "bgImage": ""
+        },
+        {
+          "caption": "미술 · 워크숍",
+          "color": "art",
+          "link": "https://www.youtube.com/@kartsgifted",
+          "bgImage": ""
+        }
+      ]
+    }
+  },
+  "footer": {
+    "brand": "2026 K예술영재 프로젝트",
+    "desc": "문화체육관광부 주최\n한국예술종합학교 산학협력단 · 한국예술영재교육연구원 주관",
+    "columns": [
+      {
+        "title": "프로젝트",
+        "links": [
+          {
+            "label": "프로젝트 소개",
+            "nav": "intro"
+          },
+          {
+            "label": "모집분야",
+            "nav": "fields"
+          },
+          {
+            "label": "프로그램",
+            "nav": "journey"
+          }
+        ]
+      },
+      {
+        "title": "지원",
+        "links": [
+          {
+            "label": "지원 및 안내",
+            "nav": "board"
+          },
+          {
+            "label": "공고문",
+            "url": "https://kriga.karts.ac.kr/"
+          },
+          {
+            "label": "문의하기",
+            "url": "mailto:kgifted2026@naver.com"
+          }
+        ]
+      },
+      {
+        "title": "미디어",
+        "links": [
+          {
+            "label": "갤러리",
+            "nav": "gallery"
+          },
+          {
+            "label": "유튜브",
+            "url": "https://www.youtube.com/@kartsgifted"
+          }
+        ]
+      },
+      {
+        "title": "주최 · 주관",
+        "links": [
+          {
+            "label": "문화체육관광부"
+          },
+          {
+            "label": "한국예술종합학교"
+          },
+          {
+            "label": "한국예술영재교육연구원"
+          }
+        ]
+      }
+    ],
+    "address": "(우) 03072 서울시 종로구 창경궁로 215 한국예술종합학교 대학로캠퍼스 232호",
+    "contact": "문의 kgifted2026@naver.com"
+  }
+}

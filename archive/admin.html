@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아카이브 관리자 — K예술영재 프로젝트</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --navy-950:#08090A; --navy-900:#111214; --navy-800:#1A1B1E; --navy-700:#2A2C30; --navy-600:#3A3D42;
+    --gold:#C9A227; --gold-light:#D9BB63; --cream:#EEEBE3; --cream-dim:#9B978D;
+    --danger:#D9695E;
+    --font-display:'Pretendard', -apple-system, sans-serif;
+    --font-body:'Pretendard', -apple-system, sans-serif;
+    --font-mono:'Pretendard', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--navy-950); color:var(--cream); font-family:var(--font-body); font-weight:400; word-break:keep-all;}
+  header{padding:28px 32px; border-bottom:1px solid var(--navy-700); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;}
+  h1{font-family:var(--font-display); font-weight:800; font-size:22px; margin:0;}
+  .eyebrow{font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:.18em; color:var(--gold); text-transform:uppercase;}
+  main{max-width:1100px; margin:0 auto; padding:32px;}
+  .panel{background:var(--navy-900); border:1px solid var(--navy-700); border-radius:14px; padding:24px; margin-bottom:24px;}
+  .panel h2{font-family:var(--font-display); font-weight:700; font-size:17px; margin:0 0 16px;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--cream-dim); margin-bottom:6px; font-family:var(--font-mono);}
+  input, select, textarea{
+    width:100%; background:var(--navy-800); border:1px solid var(--navy-600); border-radius:8px;
+    padding:10px 12px; color:var(--cream); font-size:14px; font-weight:400; font-family:var(--font-body); outline:none;
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--gold);}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;}
+  .field{margin-bottom:14px;}
+  .btn{
+    border:none; border-radius:8px; padding:11px 20px; font-weight:600; cursor:pointer; font-size:14px;
+  }
+  .btn-gold{background:var(--gold); color:var(--navy-950);}
+  .btn-gold:hover{background:var(--gold-light);}
+  .btn-ghost{background:transparent; border:1px solid var(--navy-600); color:var(--cream-dim);}
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn-danger{background:transparent; border:1px solid var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:var(--danger); color:var(--navy-950);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; padding:10px 8px; color:var(--cream-dim); font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:.05em; border-bottom:1px solid var(--navy-700);}
+  td{padding:10px 8px; border-bottom:1px solid var(--navy-800); vertical-align:top; font-weight:400;}
+  .tag{display:inline-block; padding:3px 8px; border-radius:6px; font-family:var(--font-mono); font-weight:600; font-size:11px;}
+  .actions-cell{white-space:nowrap;}
+  .actions-cell button{margin-right:6px; padding:6px 10px; font-size:12px;}
+  .top-actions{display:flex; gap:10px;}
+  .students-hint{font-size:11px; color:var(--cream-dim); margin-top:4px;}
+  .discipline-tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .discipline-tabs button{
+    padding:9px 16px; border-radius:999px; border:1px solid var(--navy-600); background:transparent;
+    color:var(--cream-dim); cursor:pointer; font-size:13px;
+  }
+  .discipline-tabs button.active{border-color:var(--gold); color:var(--gold); background:rgba(201,162,39,.1);}
+  .status-msg{font-family:var(--font-mono); font-weight:500; font-size:12px; color:var(--gold-light); min-height:18px; margin-top:10px;}
+  .empty{color:var(--cream-dim); font-size:13px; padding:20px 0;}
+  .admin-nav{display:flex; gap:6px; padding:0 32px; max-width:1100px; margin:0 auto; border-bottom:1px solid var(--navy-700); flex-wrap:wrap;}
+  .admin-nav button{
+    background:transparent; border:none; border-bottom:2px solid transparent; color:var(--cream-dim);
+    padding:14px 18px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font-body);
+  }
+  .admin-nav button.active{color:var(--gold); border-bottom-color:var(--gold);}
+  .admin-nav button:hover{color:var(--cream);}
+  .admin-panel.hidden{display:none;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">ARCHIVE ADMIN</div>
+    <h1>K예술영재 프로젝트 — 아카이브 관리자</h1>
+  </div>
+  <div class="top-actions">
+    <button class="btn btn-ghost" id="reload-btn">data.json 다시 불러오기</button>
+    <button class="btn btn-gold" id="download-btn">data.json 다운로드</button>
+  </div>
+</header>
+
+<nav class="admin-nav" id="admin-nav">
+  <button data-panel="access" class="active">① 접속 코드</button>
+  <button data-panel="photos">② 대표 사진</button>
+  <button data-panel="sessions">③ 세션 관리</button>
+</nav>
+
+<main>
+  <section class="admin-panel" id="panel-access" data-panel="access">
+  <div class="panel">
+    <h2>접속 코드</h2>
+    <div class="field">
+      <label>ACCESS CODE</label>
+      <input id="access-code-input" style="max-width:280px;">
+    </div>
+  </div>
+  </section>
+
+  <section class="admin-panel hidden" id="panel-photos" data-panel="photos">
+  <div class="panel">
+    <h2>분야별 대표 사진</h2>
+    <div class="field">
+      <label>홈 화면 상단 배경 사진 URL</label>
+      <input id="hero-photo-input" placeholder="https://...">
+    </div>
+    <div id="discipline-photo-fields"></div>
+    <div class="students-hint">타일과 일정표 상단 배너에 쓰이는 사진입니다. 실제 촬영 사진으로 교체하려면 이미지 URL을 붙여넣고 아래 다운로드 버튼을 눌러주세요.</div>
+  </div>
+  </section>
+
+  <section class="admin-panel hidden" id="panel-sessions" data-panel="sessions">
+  <div class="panel">
+    <h2>세션 등록 / 수정</h2>
+    <div class="discipline-tabs" id="discipline-tabs"></div>
+
+    <div class="row3">
+      <div class="field"><label>날짜</label><input type="date" id="f-date"></div>
+      <div class="field"><label>시간 (예: 09:00–10:30)</label><input id="f-time" placeholder="09:00–10:30"></div>
+      <div class="field"><label>클래스명</label><input id="f-class" placeholder="예: 발레 기초 워크숍"></div>
+    </div>
+    <div class="field">
+      <label>Vimeo 영상 목록 (한 줄에 하나, "라벨 = Vimeo ID" 형식 — 세션당 여러 개 등록 가능)</label>
+      <textarea id="f-videos" rows="3" placeholder="전체 샷 = 76979871&#10;클로즈업 = 76979872"></textarea>
+    </div>
+    <div class="row">
+      <div class="field"><label>지도교수</label><input id="f-instructor" placeholder="예: 김서연 교수"></div>
+      <div class="field"><label>장소</label><input id="f-location" placeholder="예: 한국예술종합학교 무용동 1연습실"></div>
+    </div>
+    <div class="field"><label>비고 (선택 — 두 그룹 동시 진행 등)</label><input id="f-note" placeholder="예: 두 그룹 동시 진행"></div>
+    <div class="field">
+      <label>참여 학생 (쉼표로 구분)</label>
+      <textarea id="f-students" rows="2" placeholder="김도윤, 이서준, 박지호"></textarea>
+      <div class="students-hint">검색 기능은 여기 입력된 이름을 기준으로 학생을 찾습니다. 실명을 정확히 입력해 주세요.</div>
+    </div>
+    <input type="hidden" id="f-edit-id">
+    <div class="top-actions">
+      <button class="btn btn-gold" id="save-session-btn">세션 저장</button>
+      <button class="btn btn-ghost" id="clear-form-btn">입력 지우기</button>
+    </div>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="table-title">등록된 세션</h2>
+    <table>
+      <thead>
+        <tr><th>날짜</th><th>시간</th><th>클래스명</th><th>지도교수</th><th>학생</th><th>영상</th><th></th></tr>
+      </thead>
+      <tbody id="session-tbody"></tbody>
+    </table>
+    <div class="empty hidden" id="empty-msg">등록된 세션이 없습니다.</div>
+  </div>
+  </section>
+</main>
+
+<script>
+let DATA = null;
+let activeDiscipline = null;
+
+document.getElementById('admin-nav').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-panel]');
+  if(!btn) return;
+  const target = btn.dataset.panel;
+  document.querySelectorAll('#admin-nav button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.admin-panel').forEach(sec => sec.classList.toggle('hidden', sec.dataset.panel !== target));
+});
+
+
+function loadData(){
+  fetch('data.json?t=' + Date.now()).then(r => r.json()).then(json => {
+    DATA = json;
+    document.getElementById('access-code-input').value = DATA.accessCode || '';
+    document.getElementById('hero-photo-input').value = DATA.heroPhoto || '';
+    renderPhotoFields();
+    if(!activeDiscipline && DATA.disciplines.length) activeDiscipline = DATA.disciplines[0].id;
+    renderTabs();
+    renderTable();
+    setStatus('data.json을 불러왔습니다.');
+  }).catch(() => setStatus('data.json을 불러오지 못했습니다. 같은 폴더에 있는지 확인해 주세요.'));
+}
+loadData();
+document.getElementById('reload-btn').addEventListener('click', loadData);
+
+function setStatus(msg){
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function renderPhotoFields(){
+  const wrap = document.getElementById('discipline-photo-fields');
+  wrap.innerHTML = '';
+  DATA.disciplines.forEach(d => {
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.innerHTML = `<label>${d.name} 대표 사진 URL</label><input data-discipline-id="${d.id}" class="discipline-photo-input" value="${d.photo || ''}">`;
+    wrap.appendChild(field);
+  });
+}
+
+function renderTabs(){
+  const wrap = document.getElementById('discipline-tabs');
+  wrap.innerHTML = '';
+  DATA.disciplines.forEach(d => {
+    const btn = document.createElement('button');
+    btn.textContent = d.name;
+    if(d.id === activeDiscipline) btn.classList.add('active');
+    btn.addEventListener('click', () => { activeDiscipline = d.id; renderTabs(); renderTable(); clearForm(); });
+    wrap.appendChild(btn);
+  });
+}
+
+function currentDisciplineObj(){
+  return DATA.disciplines.find(d => d.id === activeDiscipline);
+}
+
+function renderTable(){
+  document.getElementById('table-title').textContent = (currentDisciplineObj()?.name || '') + ' — 등록된 세션';
+  const tbody = document.getElementById('session-tbody');
+  tbody.innerHTML = '';
+  const disc = currentDisciplineObj();
+  const list = (disc?.schedule || []).slice().sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  document.getElementById('empty-msg').classList.toggle('hidden', list.length > 0);
+  list.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.date}</td>
+      <td>${s.time}</td>
+      <td>${s.className}</td>
+      <td>${s.instructor || ''}</td>
+      <td>${(s.students||[]).join(', ')}</td>
+      <td>${(s.videos && s.videos.length) ? '<span class="tag" style="background:rgba(201,162,39,.15); color:#D9BB63;">영상 ' + s.videos.length + '개</span>' : '<span class="tag" style="border:1px solid #3A3D42; color:#9B978D;">없음</span>'}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost edit-btn">수정</button>
+        <button class="btn btn-danger del-btn">삭제</button>
+      </td>
+    `;
+    tr.querySelector('.edit-btn').addEventListener('click', () => fillForm(s));
+    tr.querySelector('.del-btn').addEventListener('click', () => deleteSession(s.id));
+    tbody.appendChild(tr);
+  });
+}
+
+function fillForm(s){
+  document.getElementById('f-edit-id').value = s.id;
+  document.getElementById('f-date').value = s.date;
+  document.getElementById('f-time').value = s.time;
+  document.getElementById('f-videos').value = (s.videos || []).map(v => `${v.label || ''} = ${v.vimeoId || ''}`).join('\n');
+  document.getElementById('f-class').value = s.className;
+  document.getElementById('f-instructor').value = s.instructor || '';
+  document.getElementById('f-location').value = s.location || '';
+  document.getElementById('f-note').value = s.note || '';
+  document.getElementById('f-students').value = (s.students||[]).join(', ');
+  setStatus('세션을 수정 중입니다. 저장하면 반영됩니다.');
+}
+
+function clearForm(){
+  document.getElementById('f-edit-id').value = '';
+  ['f-date','f-time','f-videos','f-class','f-instructor','f-location','f-note','f-students'].forEach(id => document.getElementById(id).value = '');
+  setStatus('');
+}
+document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+
+document.getElementById('save-session-btn').addEventListener('click', () => {
+  const disc = currentDisciplineObj();
+  if(!disc){ setStatus('먼저 분야를 선택해 주세요.'); return; }
+
+  const date = document.getElementById('f-date').value;
+  const time = document.getElementById('f-time').value.trim();
+  const className = document.getElementById('f-class').value.trim();
+  if(!date || !time || !className){ setStatus('날짜, 시간, 클래스명은 필수입니다.'); return; }
+
+  const editId = document.getElementById('f-edit-id').value;
+  const students = document.getElementById('f-students').value.split(',').map(s => s.trim()).filter(Boolean);
+  const entryId = editId || (disc.id + '-' + Date.now());
+  const videos = document.getElementById('f-videos').value.split('\n').map(s => s.trim()).filter(Boolean).map((line, i) => {
+    const eqIndex = line.indexOf('=');
+    let label, vimeoId;
+    if(eqIndex === -1){
+      label = '영상 ' + (i+1);
+      vimeoId = line.trim();
+    } else {
+      label = line.slice(0, eqIndex).trim() || ('영상 ' + (i+1));
+      vimeoId = line.slice(eqIndex+1).trim();
+    }
+    return { id: entryId + '-v' + (i+1), label, vimeoId };
+  });
+
+  const entry = {
+    id: entryId,
+    date, time, className,
+    instructor: document.getElementById('f-instructor').value.trim(),
+    location: document.getElementById('f-location').value.trim(),
+    videos,
+    students
+  };
+  const noteVal = document.getElementById('f-note').value.trim();
+  if(noteVal) entry.note = noteVal;
+
+  if(editId){
+    const idx = disc.schedule.findIndex(s => s.id === editId);
+    if(idx > -1) disc.schedule[idx] = entry;
+  } else {
+    disc.schedule.push(entry);
+  }
+  renderTable();
+  clearForm();
+  setStatus('세션이 저장되었습니다. 완료 후 우측 상단의 "data.json 다운로드"로 반영해 주세요.');
+});
+
+function deleteSession(id){
+  const disc = currentDisciplineObj();
+  if(!confirm('이 세션을 삭제할까요?')) return;
+  disc.schedule = disc.schedule.filter(s => s.id !== id);
+  renderTable();
+  setStatus('세션이 삭제되었습니다. "data.json 다운로드"로 반영해 주세요.');
+}
+
+document.getElementById('download-btn').addEventListener('click', () => {
+  DATA.accessCode = document.getElementById('access-code-input').value.trim() || DATA.accessCode;
+  DATA.heroPhoto = document.getElementById('hero-photo-input').value.trim() || DATA.heroPhoto;
+  document.querySelectorAll('.discipline-photo-input').forEach(input => {
+    const disc = DATA.disciplines.find(d => d.id === input.dataset.disciplineId);
+    if(disc) disc.photo = input.value.trim() || disc.photo;
+  });
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  setStatus('data.json이 다운로드되었습니다. 기존 파일을 이 파일로 교체(커밋)해 주세요.');
+});
+</script>
+</body>
+</html>

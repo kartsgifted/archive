@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>2026 K예술영재 프로젝트</title>
+<meta name="description" content="발굴에서 무대까지, 예술영재의 성장을 기록하다 — 2026 K예술영재 프로젝트 공식 홈페이지">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+<style>
+  :root{
+    --navy:#0F2A43; --navy-2:#173A5E; --navy-ink:#16233A; --navy-ink-2:#4B5A6E; --navy-ink-3:#8B96A3;
+    --gold:#C9A24B; --gold-dark:#A9822F; --gold-tint:#FAF3E2;
+    --bg:#ffffff; --bg-soft:#F5F6F8; --line:#E4E7EB;
+    --music:#2F6FB5; --dance:#C15D89; --trad:#B23A3A; --art:#3E8B5C;
+    --sans:'PretendardVariable','Pretendard-Regular','Pretendard', -apple-system, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--bg);color:var(--navy-ink);font-family:var(--sans);line-height:1.6;word-break:keep-all;overflow:hidden;}
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px;width:100%;}
+  ::selection{background:var(--gold);color:#fff;}
+
+  /* ---------- scroll-snap shell ---------- */
+  #snap{height:100vh;height:100dvh;overflow-y:scroll;overflow-x:hidden;scroll-snap-type:y mandatory;scroll-behavior:smooth;}
+  .snap-section{position:relative;min-height:100vh;min-height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+  .snap-section .sec-scroll{position:relative;z-index:2;width:100%;max-height:100vh;max-height:100dvh;overflow-y:auto;padding:96px 0 48px;}
+  .snap-section .sec-scroll::-webkit-scrollbar{width:0;height:0;}
+
+  /* ---------- section background ---------- */
+  .sec-bg{position:absolute;inset:0;z-index:0;}
+  .sec-bg .layer{position:absolute;inset:0;}
+  .sec-bg img.bgimg, .sec-bg video.bgvid{width:100%;height:100%;object-fit:cover;}
+  .sec-bg iframe.bgyt{position:absolute;top:50%;left:50%;width:185vh;height:60vw;min-width:145%;min-height:145%;transform:translate(-50%,-50%);pointer-events:none;}
+  .sec-bg .overlay{position:absolute;inset:0;background:rgba(0,0,0,0);}
+  .grad-navy{background:linear-gradient(160deg,#081826 0%,#0F2A43 45%,#173A5E 80%,#204a6f 100%);}
+  .grad-navy::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 25% 15%, rgba(201,162,75,0.14), transparent 55%),radial-gradient(ellipse 60% 50% at 85% 90%, rgba(0,0,0,0.25), transparent 60%);}
+
+  /* ---------- header / GNB ---------- */
+  header.gnb{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:72px;transition:background .3s ease, box-shadow .3s ease, height .3s ease;border-bottom:1px solid transparent;}
+  header.gnb.solid{background:#fff;height:62px;border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(20,30,35,0.04);}
+  header.gnb .logo{font-weight:800;font-size:18px;letter-spacing:-.01em;color:#fff;transition:color .3s ease;display:flex;align-items:center;gap:8px;}
+  header.gnb.solid .logo{color:var(--navy-ink);}
+  header.gnb .logo .badge{background:var(--gold);color:#1a1300;font-size:11px;font-weight:800;padding:3px 8px;border-radius:3px;}
+  nav.menu{display:flex;gap:32px;}
+  nav.menu a{font-size:14px;font-weight:600;color:rgba(255,255,255,0.92);transition:color .3s ease;cursor:pointer;white-space:nowrap;}
+  header.gnb.solid nav.menu a{color:var(--navy-ink-2);}
+  nav.menu a:hover{color:var(--gold);} header.gnb.solid nav.menu a:hover{color:var(--gold-dark);}
+  .gnb-cta{background:var(--gold);color:#20170a;font-size:13px;font-weight:800;padding:10px 18px;border-radius:3px;cursor:pointer;white-space:nowrap;}
+  .gnb-cta:hover{background:var(--gold-dark);color:#fff;}
+
+  /* ---------- dot nav ---------- */
+  .dotnav{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:200;display:flex;flex-direction:column;gap:14px;}
+  .dotnav .dot{width:9px;height:9px;border-radius:50%;background:rgba(120,130,145,0.35);cursor:pointer;transition:all .25s;position:relative;}
+  .dotnav .dot .lbl{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:11.5px;font-weight:700;white-space:nowrap;color:var(--navy-ink);background:#fff;padding:4px 10px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.1);opacity:0;pointer-events:none;transition:opacity .2s;}
+  .dotnav .dot:hover .lbl{opacity:1;}
+  .dotnav .dot.active{background:var(--gold);transform:scale(1.35);}
+
+  /* ---------- hero ---------- */
+  .hero .content{position:relative;z-index:2;padding:0 24px;max-width:800px;margin:0 auto;text-align:center;color:#fff;}
+  .hero .eyebrow{font-size:12px;letter-spacing:.14em;font-weight:700;margin-bottom:22px;opacity:.85;}
+  .hero h1{font-size:clamp(26px,4.6vw,48px);font-weight:800;line-height:1.4;letter-spacing:-.01em;margin-bottom:22px;text-shadow:0 2px 24px rgba(0,0,0,.25);white-space:pre-line;}
+  .hero h1 .accent{color:var(--gold);}
+  .hero p{font-size:clamp(14px,1.6vw,16.5px);color:rgba(255,255,255,0.88);margin-bottom:30px;white-space:pre-line;}
+  .hero-chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:30px;}
+  .hero-chips span{font-size:12px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.32);padding:8px 15px;border-radius:100px;}
+  .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .btn{padding:14px 26px;font-size:14px;font-weight:700;border-radius:3px;transition:all .2s ease;cursor:pointer;display:inline-block;}
+  .btn-solid{background:var(--gold);color:#20170a;} .btn-solid:hover{background:#e0bd6c;}
+  .btn-line{border:1.5px solid rgba(255,255,255,0.75);color:#fff;} .btn-line:hover{background:rgba(255,255,255,0.12);}
+  .scroll-ind{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.2em;color:rgba(255,255,255,0.8);font-weight:600;}
+  .scroll-ind .dot{width:1px;height:24px;background:rgba(255,255,255,0.55);position:relative;overflow:hidden;}
+  .scroll-ind .dot::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:100%;background:var(--gold);animation:scrolldown 1.6s ease-in-out infinite;}
+  @keyframes scrolldown{0%{top:-100%;}60%{top:100%;}100%{top:100%;}}
+
+  /* ---------- section head ---------- */
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px;flex-wrap:wrap;gap:16px;}
+  .sec-head .eyebrow{font-size:12px;font-weight:800;color:var(--gold-dark);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+  .sec-head h2{font-size:clamp(21px,2.8vw,30px);font-weight:800;letter-spacing:-.01em;}
+  .sec-head .desc{color:var(--navy-ink-2);font-size:13.5px;margin-top:8px;max-width:560px;}
+  .more-link{font-size:13px;font-weight:700;color:var(--navy-ink-2);border-bottom:1.5px solid var(--navy-ink);padding-bottom:2px;white-space:nowrap;cursor:pointer;}
+  .more-link:hover{color:var(--gold-dark);border-color:var(--gold-dark);}
+  .on-media .sec-head h2, .on-media .sec-head .eyebrow{color:#fff;}
+  .on-media .sec-head .eyebrow{color:var(--gold);}
+  .on-media .sec-head .desc{color:rgba(255,255,255,0.82);}
+  .on-media .more-link{color:#fff;border-color:#fff;}
+  .subhead{font-size:15px;font-weight:800;color:var(--navy-ink);margin:34px 0 14px;padding-top:22px;border-top:1px solid var(--line);}
+  .subhead:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .on-media .subhead{color:#fff;border-top-color:rgba(255,255,255,0.18);}
+  .lead-text{font-size:13.5px;color:var(--navy-ink-2);margin-bottom:18px;max-width:680px;}
+  .on-media .lead-text{color:rgba(255,255,255,0.85);}
+
+  /* ---------- value chain (4-step) ---------- */
+  .chain-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:40px;}
+  .chain-cell{background:#fff;padding:24px 18px;position:relative;}
+  .chain-cell .cn{font-family:var(--sans);font-size:11px;font-weight:800;color:var(--gold-dark);letter-spacing:.08em;margin-bottom:10px;}
+  .chain-cell h4{font-size:17px;font-weight:800;margin-bottom:8px;color:var(--navy-ink);}
+  .chain-cell p{font-size:12px;color:var(--navy-ink-2);}
+  .chain-cell::after{content:'→';position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--gold);font-weight:800;font-size:16px;z-index:2;}
+  .chain-cell:last-child::after{display:none;}
+
+  /* ---------- org list ---------- */
+  .org-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:36px;}
+  .org-chip{font-size:12.5px;font-weight:700;background:var(--bg-soft);border:1px solid var(--line);padding:9px 16px;border-radius:100px;color:var(--navy-ink-2);}
+  .on-media .org-chip{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3);color:#fff;}
+
+  /* ---------- card grid (fields) ---------- */
+  .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .prog-card{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:box-shadow .25s ease, transform .25s ease;}
+  .prog-card:hover{box-shadow:0 12px 28px rgba(15,42,67,0.1);transform:translateY(-3px);}
+  .prog-card .band{height:6px;background:var(--accent);}
+  .prog-card .body{padding:20px 18px 18px;}
+  .prog-card .tag{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+  .prog-card h3{font-size:18px;font-weight:800;margin-bottom:2px;} .prog-card .en{font-size:11px;color:var(--navy-ink-3);margin-bottom:12px;font-weight:600;}
+  .prog-card p{font-size:12.5px;color:var(--navy-ink-2);}
+
+  /* ---------- venue list ---------- */
+  .venue-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px;}
+  .venue-card{border:1px solid var(--line);border-radius:6px;padding:16px;background:#fff;}
+  .venue-card .vf{font-size:11px;font-weight:800;color:var(--gold-dark);margin-bottom:6px;}
+  .venue-card .vn{font-size:13.5px;font-weight:700;color:var(--navy-ink);} .venue-card .va{font-size:11.5px;color:var(--navy-ink-3);margin-top:3px;}
+
+  /* ---------- archive placeholder ---------- */
+  .archive-note{background:var(--gold-tint);border:1px dashed var(--gold);border-radius:8px;padding:22px 24px;font-size:13px;color:var(--gold-dark);font-weight:600;margin-top:8px;}
+  .on-media .archive-note{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.4);color:#fff;}
+  .placeholder-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+  .ph-item{aspect-ratio:1/1;border-radius:6px;background:linear-gradient(135deg,var(--accent2,#334),#1a2436);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(255,255,255,0.85);}
+  .ph-item .icon{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .ph-item .cap{font-size:11.5px;font-weight:700;}
+  .ph-item .st{font-size:10px;opacity:.75;}
+
+  /* ---------- region cards (mentoring) ---------- */
+  .region-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px;}
+  .region-card{border:1px solid var(--line);border-radius:8px;padding:24px 22px;background:#fff;}
+  .region-card h4{font-size:17px;font-weight:800;margin-bottom:8px;color:var(--gold-dark);}
+  .region-card p{font-size:12.5px;color:var(--navy-ink-2);}
+
+  /* ---------- day schedule (camp) ---------- */
+  .day-list{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;margin-bottom:8px;}
+  .day-row{display:grid;grid-template-columns:90px 1fr;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;}
+  .day-row:last-child{border-bottom:none;}
+  .day-row .dlabel{font-weight:800;color:var(--gold-dark);}
+  .day-row .dtitle{font-weight:700;color:var(--navy-ink);} .day-row .ddesc{font-size:12px;color:var(--navy-ink-3);margin-top:2px;}
+
+  /* ---------- documentary / media ---------- */
+  .doc-card{border:1px solid var(--line);border-radius:8px;padding:26px 24px;background:#fff;margin-bottom:24px;}
+  .doc-card h3{font-size:19px;font-weight:800;margin-bottom:10px;color:var(--navy-ink);}
+  .doc-card p{font-size:13px;color:var(--navy-ink-2);margin-bottom:16px;}
+  .ep-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .ep-chip{font-size:12px;font-weight:700;background:var(--bg-soft);border:1px solid var(--line);padding:8px 14px;border-radius:100px;color:var(--navy-ink-2);}
+  .sns-note{font-size:12.5px;color:var(--navy-ink-3);margin-top:18px;}
+  .on-media .sns-note{color:rgba(255,255,255,0.65);}
+
+  /* ---------- board (notices/press) ---------- */
+  .board-list{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:28px;}
+  .board-row{display:grid;grid-template-columns:1fr 100px;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);font-size:13px;}
+  .board-row:last-child{border-bottom:none;}
+  .board-row.head{background:var(--bg-soft);font-weight:700;color:var(--navy-ink-3);font-size:11px;letter-spacing:.04em;text-transform:uppercase;}
+  .board-row .tt{font-weight:600;} .board-row .dt{color:var(--navy-ink-3);text-align:right;white-space:nowrap;}
+  .board-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .board-tab{font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:100px;border:1px solid var(--line);color:var(--navy-ink-2);cursor:default;}
+  .board-tab.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* ---------- faq / contact ---------- */
+  .faq-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 22px;margin-bottom:8px;}
+  .faq-item{border-bottom:1px solid var(--line);padding:16px 0;}
+  .faq-item:last-child{border-bottom:none;}
+  .faq-item .q{font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--navy-ink);}
+  .faq-item .q::before{content:'Q. ';color:var(--gold-dark);}
+  .faq-item .a{font-size:12.5px;color:var(--navy-ink-2);}
+  .faq-item .a::before{content:'A. ';color:var(--navy-ink-3);}
+  .contact-box{background:var(--bg-soft);border-radius:8px;padding:20px 22px;font-size:13px;margin-top:20px;}
+  .contact-box b{color:var(--gold-dark);}
+
+  /* ---------- footer ---------- */
+  footer{background:#0B1F33;color:#c3ccd6;padding:48px 0 0;}
+  .foot-grid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:28px;padding-bottom:32px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .foot-brand{font-size:18px;font-weight:800;color:#fff;margin-bottom:10px;}
+  .foot-brand-desc{font-size:12px;color:#8b96a3;line-height:1.7;}
+  .foot-col h5{font-size:12px;font-weight:700;color:#fff;margin-bottom:12px;letter-spacing:.04em;}
+  .foot-col a{display:block;font-size:12.5px;color:#a3adba;padding:5px 0;}
+  .foot-col a:hover{color:var(--gold);}
+  .foot-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:20px 0 26px;font-size:11.5px;color:#6d7885;}
+
+  .src-badge{position:fixed;left:14px;bottom:14px;z-index:300;font-size:10.5px;background:rgba(0,0,0,0.55);color:#fff;padding:5px 10px;border-radius:100px;letter-spacing:.03em;opacity:.75;}
+
+  @media(max-width:960px){
+    nav.menu{display:none;} .dotnav{display:none;}
+    .chain-row{grid-template-columns:1fr 1fr;} .chain-cell::after{display:none;}
+    .card-grid{grid-template-columns:1fr;} .venue-grid{grid-template-columns:1fr 1fr;}
+    .placeholder-grid{grid-template-columns:1fr 1fr;} .region-grid{grid-template-columns:1fr;}
+    .day-row{grid-template-columns:70px 1fr;}
+    .foot-grid{grid-template-columns:1fr 1fr;}
+    .wrap{padding:0 22px;}
+    .snap-section .sec-scroll{padding:80px 0 40px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="gnb" id="siteHeader">
+  <a class="logo" data-nav="hero">K예술영재<span class="badge" id="hdrBadge">2026</span></a>
+  <nav class="menu">
+    <a data-nav="intro">프로젝트 소개</a>
+    <a data-nav="workshop">분야별 워크숍</a>
+    <a data-nav="mentoring">멘토링</a>
+    <a data-nav="camp">겨울캠프</a>
+    <a data-nav="media">미디어</a>
+    <a data-nav="news">소식</a>
+  </nav>
+  <a class="gnb-cta" data-nav="news">문의하기</a>
+</header>
+
+<div class="dotnav" id="dotNav"></div>
+<div class="src-badge" id="srcBadge" style="display:none;"></div>
+
+<div id="snap">
+  <!-- HOME -->
+  <section class="snap-section hero" id="hero" data-section="hero">
+    <div class="sec-bg" id="bg-hero"></div>
+    <div class="content">
+      <div class="eyebrow" id="heroEyebrow"></div>
+      <h1 id="heroTitle"></h1>
+      <p id="heroSubtitle"></p>
+      <div class="hero-chips" id="heroChips"></div>
+      <div class="hero-ctas">
+        <a class="btn btn-solid" data-nav="workshop">프로그램 살펴보기</a>
+        <a class="btn btn-line" data-nav="media">미디어 보기</a>
+      </div>
+    </div>
+    <div class="scroll-ind"><span>SCROLL</span><span class="dot"></span></div>
+  </section>
+
+  <!-- 프로젝트 소개 -->
+  <section class="snap-section" id="intro" data-section="intro">
+    <div class="sec-bg" id="bg-intro"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow" id="introEyebrow"></div><h2 id="introHeading"></h2><p class="desc" id="introDesc"></p></div></div>
+      <div class="org-row" id="orgRow"></div>
+      <div class="subhead" id="chainLabel">4단계 밸류체인</div>
+      <div class="chain-row" id="chainRow"></div>
+      <div class="subhead" id="fieldsLabel">분야 소개</div>
+      <p class="lead-text" id="fieldsDesc"></p>
+      <div class="card-grid" id="cardGrid"></div>
+    </div></div>
+  </section>
+
+  <!-- 분야별 워크숍 -->
+  <section class="snap-section" id="workshop" data-section="workshop">
+    <div class="sec-bg" id="bg-workshop"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow" id="wsEyebrow"></div><h2 id="wsHeading"></h2><p class="desc" id="wsDesc"></p></div></div>
+      <div class="subhead">워크숍 장소</div>
+      <div class="venue-grid" id="wsVenueGrid"></div>
+      <div class="subhead">아카이빙 자료</div>
+      <div class="placeholder-grid" id="wsPhGrid"></div>
+      <div class="archive-note" id="wsArchiveNote"></div>
+    </div></div>
+  </section>
+
+  <!-- 멘토링 -->
+  <section class="snap-section" id="mentoring" data-section="mentoring">
+    <div class="sec-bg" id="bg-mentoring"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow" id="mtEyebrow"></div><h2 id="mtHeading"></h2><p class="desc" id="mtDesc"></p></div></div>
+      <div class="subhead">권역별 운영</div>
+      <div class="region-grid" id="regionGrid"></div>
+      <div class="subhead">아카이빙 자료</div>
+      <div class="archive-note" id="mtArchiveNote"></div>
+    </div></div>
+  </section>
+
+  <!-- 겨울캠프 -->
+  <section class="snap-section" id="camp" data-section="camp">
+    <div class="sec-bg" id="bg-camp"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow" id="campEyebrow"></div><h2 id="campHeading"></h2><p class="desc" id="campDesc"></p></div></div>
+      <div class="subhead">일정 (안)</div>
+      <div class="day-list" id="dayList"></div>
+      <div class="subhead">아카이빙 자료</div>
+      <div class="archive-note" id="campArchiveNote"></div>
+    </div></div>
+  </section>
+
+  <!-- 미디어 -->
+  <section class="snap-section" id="media" data-section="media">
+    <div class="sec-bg" id="bg-media"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head">
+        <div><div class="eyebrow" id="mediaEyebrow"></div><h2 id="mediaHeading"></h2><p class="desc" id="mediaDesc"></p></div>
+        <a class="more-link" id="mediaMore" target="_blank" rel="noopener">유튜브 채널 →</a>
+      </div>
+      <div class="doc-card">
+        <h3 id="docTitle"></h3>
+        <p id="docDesc"></p>
+        <div class="ep-row" id="epRow"></div>
+      </div>
+      <p class="sns-note" id="snsNote"></p>
+    </div></div>
+  </section>
+
+  <!-- 소식 -->
+  <section class="snap-section" id="news" data-section="news">
+    <div class="sec-bg" id="bg-news"></div>
+    <div class="sec-scroll"><div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow" id="newsEyebrow"></div><h2 id="newsHeading"></h2><p class="desc" id="newsDesc"></p></div></div>
+
+      <div class="board-tabs"><span class="board-tab on">공지사항</span></div>
+      <div class="board-list" id="noticeList"></div>
+
+      <div class="board-tabs"><span class="board-tab on">언론보도</span></div>
+      <div class="board-list" id="pressList"></div>
+
+      <div class="subhead">오시는 길</div>
+      <div class="venue-grid" id="newsVenueGrid"></div>
+
+      <div class="subhead">자주 묻는 질문</div>
+      <div class="faq-card" id="faqList"></div>
+
+      <div class="contact-box" id="contactBox"></div>
+    </div></div>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="snap-section" id="footerSec" data-section="footerSec" style="min-height:auto;">
+    <footer style="width:100%;">
+      <div class="wrap">
+        <div class="foot-grid" id="footGrid"></div>
+        <div class="foot-bottom" id="footBottom"></div>
+      </div>
+    </footer>
+  </section>
+</div>
+
+<script>
+/* ===================== DEFAULT DATA (per 구축기획안) ===================== */
+const DEFAULT_DATA = {
+  meta:{ title:"2026 K예술영재 프로젝트", badge:"2026" },
+  sections:{
+    hero:{
+      bg:{type:"gradient",overlay:0.3},
+      eyebrow:"문화체육관광부 주최 · 케이브레인컴퍼니 · 한국예술영재교육연구원(KRIGA) · MBC C&I",
+      title:"국민의 감동이 되는 영재의 성장 서사,\nK-예술의 내일을 연결하다",
+      subtitle:"발굴에서 무대까지 — 음악·무용·전통예술·미술 네 분야 예술영재의 성장을 기록합니다.",
+      chips:["모집기간 2026.5.18–6.5","대상 초4~고2","4개 분야","참가비 무료"]
+    },
+    intro:{
+      bg:{type:"gradient",overlay:0.4},
+      eyebrow:"About the Project", heading:"프로젝트 소개",
+      desc:"「2026 K예술영재 프로젝트」는 전국의 재능 있는 예술영재를 발굴하여 음악·무용·전통예술·미술 4개 분야에 걸쳐 워크숍-멘토링-겨울 심화캠프-공연으로 이어지는 통합형 육성 과정을 제공하고, 성과공연과 다큐멘터리를 통해 그 성장 과정을 대국민과 공유하는 사업입니다.",
+      orgs:["K-ARTS 산학협력단","한국예술영재교육연구원(KRIGA)","㈜케이브레인컴퍼니","MBC C&I"],
+      chain:[
+        {label:"발굴",desc:"전국 공모를 통한 예술영재 발굴"},
+        {label:"교육",desc:"워크숍 · 멘토링 · 겨울 심화캠프"},
+        {label:"공연",desc:"성과공연 및 수료식 무대"},
+        {label:"미디어",desc:"다큐멘터리 제작 및 방송 송출"}
+      ],
+      fieldsDesc:"음악·무용·전통예술·미술 네 분야로 운영되며, 분야별 커리큘럼과 담당 교강사는 [분야별 워크숍] 페이지에서 확인할 수 있습니다.",
+      fields:[
+        {accent:"music",tag:"Music",name:"음악",en:"기악(피아노·바이올린·비올라·첼로)",note:"개인레슨·마스터클래스 중심"},
+        {accent:"dance",tag:"Dance",name:"무용",en:"발레",note:"피지컬 트레이닝·발레 테크닉 심화"},
+        {accent:"trad",tag:"Traditional Arts",name:"전통예술",en:"기악·성악·연희",note:"개인레슨·소리 창작·기록 워크샵"},
+        {accent:"art",tag:"Visual Arts",name:"미술",en:"시각예술",note:"실기 워크숍·테크놀로지 리터러시"}
+      ]
+    },
+    workshop:{
+      bg:{type:"gradient",overlay:0.4},
+      eyebrow:"Workshop", heading:"분야별 워크숍",
+      desc:"음악·무용·전통예술·미술 4개 분야의 워크숍을 소개하고, 진행된 워크숍의 아카이빙 자료를 열람할 수 있도록 구성합니다. 분야별 커리큘럼, 일정, 장소, 담당 교강사를 안내합니다.",
+      venues:[
+        {field:"음악",name:"한국예술종합학교 서초동 캠퍼스",addr:"개인레슨 · 마스터클래스 · 학생 음악회"},
+        {field:"무용",name:"한국예술영재교육원 광주캠퍼스",addr:"발레 클라스 · 레파토리 · 테크닉 심화"},
+        {field:"전통예술",name:"한국예술종합학교 석관동 캠퍼스",addr:"개인레슨 · 소리 창작 · 기록 워크샵"},
+        {field:"미술",name:"KAIST 본원",addr:"파운데이션 과정 · 실기 워크숍 · 발표전시"}
+      ],
+      archiveNote:"워크숍 현장 사진·영상, 참가자 소개(프로필·특기·한 줄 소감), 소규모 공연·발표회 기록은 각 워크숍 종료 후 1주 이내 순차적으로 업데이트됩니다.",
+      placeholders:[
+        {caption:"음악 워크숍",accent:"music"},
+        {caption:"무용 워크숍",accent:"dance"},
+        {caption:"전통예술 워크숍",accent:"trad"},
+        {caption:"미술 워크숍",accent:"art"}
+      ]
+    },
+    mentoring:{
+      bg:{type:"gradient",overlay:0.4},
+      eyebrow:"Mentoring", heading:"멘토링",
+      desc:"워크숍 수료자 중 참여도와 성장 가능성이 돋보이는 참가자를 대상으로, 권역별 온·오프라인 멘토링을 통해 개인별 맞춤 성장을 지원합니다.",
+      regions:[
+        {name:"수도권",desc:"서울·경기·인천 권역 온·오프라인 병행 멘토링"},
+        {name:"충청권",desc:"대전·세종·충남북 권역 온·오프라인 병행 멘토링"},
+        {name:"호남권",desc:"광주·전남북 권역 온·오프라인 병행 멘토링"}
+      ],
+      archiveNote:"개인·그룹 멘토링 활동 사진·영상, 과제 수행 및 성장 기록은 멘토링 진행 후 순차적으로 업데이트됩니다."
+    },
+    camp:{
+      bg:{type:"gradient",overlay:0.4},
+      eyebrow:"Winter Camp", heading:"겨울캠프",
+      desc:"2027. 1. 24(일) ~ 1. 30(토), 6박7일간 광주광역시에서 진행되는 숙박형 심화 캠프입니다. 정상급 아티스트의 마스터클래스와 창작 레지던시를 거쳐 하이라이트 갈라 공연으로 성장을 완성합니다.",
+      days:[
+        {day:"Day 1",title:"입소 · 오리엔테이션",desc:"캠프 소개 및 분야별 조 편성"},
+        {day:"Day 2-3",title:"마스터클래스",desc:"정상급 아티스트 개인지도 및 그룹 레슨"},
+        {day:"Day 4-5",title:"크로스오버 프로젝트",desc:"분야 간 협업 창작 · 현장예술탐방"},
+        {day:"Day 6",title:"리허설",desc:"성과공연 최종 리허설"},
+        {day:"Day 7",title:"성과공연 · 수료식",desc:"하이라이트 갈라 공연 및 K예술영재 인증서 수여"}
+      ],
+      archiveNote:"캠프 활동(레슨·크로스오버 프로젝트·현장예술탐방 등) 사진·영상, 성과공연 실황, 수료식·성과공유회 기록은 캠프 종료 후 업데이트됩니다."
+    },
+    media:{
+      bg:{type:"gradient",overlay:0.45},
+      eyebrow:"Media", heading:"미디어",
+      desc:"MBC C&I 제작 3부작 다큐멘터리와 공식 유튜브 채널을 통해 예술영재들의 성장 과정을 대국민과 공유합니다.",
+      channelUrl:"https://www.youtube.com/@kartsgifted",
+      documentary:{
+        title:"성장, 다큐멘터리로 남다",
+        desc:"연습에서 무대까지 — 과장 없는 관찰의 시선으로 아이들의 훈련 과정을 기록합니다. MBC C&I 제작 3부작으로, 발굴부터 겨울캠프 성과공연까지의 여정을 담습니다.",
+        episodes:["1부 · 발굴 (공개 예정)","2부 · 성장 (공개 예정)","3부 · 무대 (공개 예정)"]
+      },
+      snsNote:"공식 유튜브 채널(숏폼 · 성장기록 시리즈 · 인터뷰)과 인스타그램 등 SNS 최신 게시물이 이곳에 순차적으로 연동될 예정입니다."
+    },
+    news:{
+      bg:{type:"gradient",overlay:0.4},
+      eyebrow:"News", heading:"소식",
+      desc:"모집·선발 관련 공지, 일정 안내, 보도자료를 확인할 수 있습니다.",
+      notices:[
+        {title:"2026 K예술영재 프로젝트 참가자 모집 공고",date:"2026.5.18"},
+        {title:"추가 공지사항은 프로그램 진행에 따라 순차 등록됩니다",date:"-"}
+      ],
+      press:[
+        {title:"보도자료는 프로그램 진행 후 등록됩니다",date:"-"}
+      ],
+      venues:[
+        {field:"음악",name:"한국예술종합학교 서초동 캠퍼스",addr:"서울 서초구"},
+        {field:"전통예술",name:"한국예술종합학교 석관동 캠퍼스",addr:"서울 성북구"},
+        {field:"무용",name:"한국예술영재교육원 광주캠퍼스",addr:"광주광역시"},
+        {field:"미술",name:"KAIST 본원",addr:"대전 유성구"}
+      ],
+      faq:[
+        {q:"참가비가 있나요?",a:"문화체육관광부 지원으로 참가비는 무료입니다. 단, 교통비 및 숙박비는 개인 부담입니다."},
+        {q:"1인당 몇 개 분야에 지원할 수 있나요?",a:"1인 1개 전공만 지원 가능하며, 타 분야 중복 지원 시 전부 무효 처리됩니다."},
+        {q:"2026학년도 한국예술영재교육원 재원생도 지원할 수 있나요?",a:"지원할 수 없습니다."}
+      ],
+      contactEmail:"kgifted2026@naver.com",
+      moreUrl:"https://kriga.karts.ac.kr/"
+    }
+  },
+  footer:{
+    brand:"2026 K예술영재 프로젝트",
+    desc:"발굴에서 무대까지, 예술영재의 성장을 기록하다\n문화체육관광부 주최 · K-ARTS 산학협력단 · 한국예술영재교육연구원(KRIGA) · ㈜케이브레인컴퍼니 · MBC C&I",
+    columns:[
+      {title:"프로젝트",links:[{label:"프로젝트 소개",nav:"intro"},{label:"분야별 워크숍",nav:"workshop"},{label:"멘토링",nav:"mentoring"}]},
+      {title:"프로그램",links:[{label:"겨울캠프",nav:"camp"},{label:"미디어",nav:"media"},{label:"소식",nav:"news"}]},
+      {title:"바로가기",links:[{label:"공고문",url:"https://kriga.karts.ac.kr/"},{label:"유튜브",url:"https://www.youtube.com/@kartsgifted"},{label:"문의하기",url:"mailto:kgifted2026@naver.com"}]},
+      {title:"주최 · 운영",links:[{label:"문화체육관광부"},{label:"케이브레인컴퍼니"},{label:"MBC C&I"}]}
+    ],
+    address:"(우) 03072 서울시 종로구 창경궁로 215 한국예술종합학교 대학로캠퍼스 232호",
+    contact:"문의 kgifted2026@naver.com"
+  }
+};
+
+const ACCENT_COLORS = {music:"var(--music)",dance:"var(--dance)",trad:"var(--trad)",art:"var(--art)"};
+const SECTION_LABELS = {hero:"홈",intro:"프로젝트소개",workshop:"워크숍",mentoring:"멘토링",camp:"겨울캠프",media:"미디어",news:"소식",footerSec:"안내"};
+
+/* ===================== LOAD ===================== */
+async function loadData(){
+  try{
+    const res = await fetch('data.json', {cache:'no-store'});
+    if(res.ok){ const json = await res.json(); showSrcBadge('data.json 발행본'); return json; }
+  }catch(e){}
+  try{
+    const draft = localStorage.getItem('kgifted_draft');
+    if(draft){ showSrcBadge('임시저장 미리보기 (관리자 draft)'); return JSON.parse(draft); }
+  }catch(e){}
+  showSrcBadge('기본 샘플 데이터');
+  return DEFAULT_DATA;
+}
+function showSrcBadge(text){
+  const params = new URLSearchParams(location.search);
+  if(params.get('preview') === '1'){ const el = document.getElementById('srcBadge'); el.textContent = text; el.style.display = 'block'; }
+}
+function getYouTubeId(url){
+  if(!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+function renderBg(container, bg){
+  container.innerHTML = '';
+  const type = (bg && bg.type) || 'gradient';
+  container.closest('.snap-section').classList.add('on-media');
+  if(type === 'image' && bg.url){
+    const img = document.createElement('img'); img.className='bgimg'; img.src=bg.url; img.alt='';
+    container.appendChild(img);
+  } else if(type === 'video' && bg.url){
+    const vid = document.createElement('video'); vid.className='bgvid'; vid.src=bg.url; vid.autoplay=true; vid.muted=true; vid.loop=true; vid.playsInline=true;
+    container.appendChild(vid);
+  } else if(type === 'youtube' && bg.url){
+    const id = getYouTubeId(bg.url);
+    if(id){
+      const iframe = document.createElement('iframe'); iframe.className='bgyt';
+      iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&cc_load_policy=0&disablekb=1&fs=0&hl=en`;
+      iframe.setAttribute('frameborder','0'); iframe.setAttribute('allow','autoplay; encrypted-media; fullscreen'); iframe.setAttribute('tabindex','-1');
+      container.appendChild(iframe);
+    } else { const layer=document.createElement('div'); layer.className='layer grad-navy'; container.appendChild(layer); }
+  } else {
+    const layer = document.createElement('div'); layer.className='layer grad-navy'; container.appendChild(layer);
+  }
+  const overlay = document.createElement('div'); overlay.className='overlay';
+  overlay.style.background = `rgba(0,0,0,${bg && bg.overlay!=null ? bg.overlay : 0.4})`;
+  container.appendChild(overlay);
+}
+function esc(str){ return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ===================== RENDER ===================== */
+function render(data){
+  document.title = data.meta.title;
+  document.getElementById('hdrBadge').textContent = data.meta.badge;
+  const s = data.sections;
+
+  /* HERO */
+  renderBg(document.getElementById('bg-hero'), s.hero.bg);
+  document.getElementById('heroEyebrow').textContent = s.hero.eyebrow;
+  document.getElementById('heroTitle').textContent = s.hero.title;
+  document.getElementById('heroSubtitle').textContent = s.hero.subtitle;
+  document.getElementById('heroChips').innerHTML = s.hero.chips.map(c=>`<span>${esc(c)}</span>`).join('');
+
+  /* INTRO */
+  renderBg(document.getElementById('bg-intro'), s.intro.bg);
+  document.getElementById('introEyebrow').textContent = s.intro.eyebrow;
+  document.getElementById('introHeading').textContent = s.intro.heading;
+  document.getElementById('introDesc').textContent = s.intro.desc;
+  document.getElementById('orgRow').innerHTML = s.intro.orgs.map(o=>`<span class="org-chip">${esc(o)}</span>`).join('');
+  document.getElementById('chainRow').innerHTML = s.intro.chain.map((c,i)=>`<div class="chain-cell"><div class="cn">STEP ${i+1}</div><h4>${esc(c.label)}</h4><p>${esc(c.desc)}</p></div>`).join('');
+  document.getElementById('fieldsDesc').textContent = s.intro.fieldsDesc;
+  document.getElementById('cardGrid').innerHTML = s.intro.fields.map(f=>`
+    <div class="prog-card">
+      <div class="band" style="background:${ACCENT_COLORS[f.accent]||'var(--gold)'}"></div>
+      <div class="body">
+        <div class="tag" style="color:${ACCENT_COLORS[f.accent]||'var(--gold)'}">${esc(f.tag)}</div>
+        <h3>${esc(f.name)}</h3><div class="en">${esc(f.en)}</div>
+        <p>${esc(f.note)}</p>
+      </div>
+    </div>`).join('');
+
+  /* WORKSHOP */
+  renderBg(document.getElementById('bg-workshop'), s.workshop.bg);
+  document.getElementById('wsEyebrow').textContent = s.workshop.eyebrow;
+  document.getElementById('wsHeading').textContent = s.workshop.heading;
+  document.getElementById('wsDesc').textContent = s.workshop.desc;
+  document.getElementById('wsVenueGrid').innerHTML = s.workshop.venues.map(v=>`<div class="venue-card"><div class="vf">${esc(v.field)}</div><div class="vn">${esc(v.name)}</div><div class="va">${esc(v.addr)}</div></div>`).join('');
+  document.getElementById('wsPhGrid').innerHTML = s.workshop.placeholders.map(p=>`<div class="ph-item" style="--accent2:${ACCENT_COLORS[p.accent]||'#334'}"><div class="icon">▶</div><div class="cap">${esc(p.caption)}</div><div class="st">준비 중</div></div>`).join('');
+  document.getElementById('wsArchiveNote').textContent = s.workshop.archiveNote;
+
+  /* MENTORING */
+  renderBg(document.getElementById('bg-mentoring'), s.mentoring.bg);
+  document.getElementById('mtEyebrow').textContent = s.mentoring.eyebrow;
+  document.getElementById('mtHeading').textContent = s.mentoring.heading;
+  document.getElementById('mtDesc').textContent = s.mentoring.desc;
+  document.getElementById('regionGrid').innerHTML = s.mentoring.regions.map(r=>`<div class="region-card"><h4>${esc(r.name)}</h4><p>${esc(r.desc)}</p></div>`).join('');
+  document.getElementById('mtArchiveNote').textContent = s.mentoring.archiveNote;
+
+  /* CAMP */
+  renderBg(document.getElementById('bg-camp'), s.camp.bg);
+  document.getElementById('campEyebrow').textContent = s.camp.eyebrow;
+  document.getElementById('campHeading').textContent = s.camp.heading;
+  document.getElementById('campDesc').textContent = s.camp.desc;
+  document.getElementById('dayList').innerHTML = s.camp.days.map(d=>`<div class="day-row"><div class="dlabel">${esc(d.day)}</div><div><div class="dtitle">${esc(d.title)}</div><div class="ddesc">${esc(d.desc)}</div></div></div>`).join('');
+  document.getElementById('campArchiveNote').textContent = s.camp.archiveNote;
+
+  /* MEDIA */
+  renderBg(document.getElementById('bg-media'), s.media.bg);
+  document.getElementById('mediaEyebrow').textContent = s.media.eyebrow;
+  document.getElementById('mediaHeading').textContent = s.media.heading;
+  document.getElementById('mediaDesc').textContent = s.media.desc;
+  document.getElementById('mediaMore').href = s.media.channelUrl;
+  document.getElementById('docTitle').textContent = s.media.documentary.title;
+  document.getElementById('docDesc').textContent = s.media.documentary.desc;
+  document.getElementById('epRow').innerHTML = s.media.documentary.episodes.map(e=>`<span class="ep-chip">${esc(e)}</span>`).join('');
+  document.getElementById('snsNote').textContent = s.media.snsNote;
+
+  /* NEWS */
+  renderBg(document.getElementById('bg-news'), s.news.bg);
+  document.getElementById('newsEyebrow').textContent = s.news.eyebrow;
+  document.getElementById('newsHeading').textContent = s.news.heading;
+  document.getElementById('newsDesc').textContent = s.news.desc;
+  document.getElementById('noticeList').innerHTML =
+    `<div class="board-row head"><span>제목</span><span style="text-align:right">날짜</span></div>` +
+    s.news.notices.map(n=>`<div class="board-row"><span class="tt">${esc(n.title)}</span><span class="dt">${esc(n.date)}</span></div>`).join('');
+  document.getElementById('pressList').innerHTML =
+    `<div class="board-row head"><span>제목</span><span style="text-align:right">날짜</span></div>` +
+    s.news.press.map(p=>`<div class="board-row"><span class="tt">${esc(p.title)}</span><span class="dt">${esc(p.date)}</span></div>`).join('');
+  document.getElementById('newsVenueGrid').innerHTML = s.news.venues.map(v=>`<div class="venue-card"><div class="vf">${esc(v.field)}</div><div class="vn">${esc(v.name)}</div><div class="va">${esc(v.addr)}</div></div>`).join('');
+  document.getElementById('faqList').innerHTML = s.news.faq.map(f=>`<div class="faq-item"><div class="q">${esc(f.q)}</div><div class="a">${esc(f.a)}</div></div>`).join('');
+  document.getElementById('contactBox').innerHTML = `문의 <b>${esc(s.news.contactEmail)}</b> · 공고문 <a class="more-link" href="${esc(s.news.moreUrl)}" target="_blank" rel="noopener" style="margin-left:6px;">kriga.karts.ac.kr →</a>`;
+
+  /* FOOTER */
+  const f = data.footer;
+  document.getElementById('footGrid').innerHTML =
+    `<div><div class="foot-brand">${esc(f.brand)}</div><p class="foot-brand-desc">${esc(f.desc).replace(/\n/g,'<br>')}</p></div>` +
+    f.columns.map(col=>`<div class="foot-col"><h5>${esc(col.title)}</h5>${col.links.map(l=>{
+      if(l.nav) return `<a data-nav="${l.nav}">${esc(l.label)}</a>`;
+      if(l.url) return `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`;
+      return `<a style="pointer-events:none;color:#6d7885;">${esc(l.label)}</a>`;
+    }).join('')}</div>`).join('');
+  document.getElementById('footBottom').innerHTML = `<span>${esc(f.address)}</span><span>${esc(f.contact)}</span>`;
+
+  buildDotNav(); bindNav();
+}
+
+/* ===================== NAV ===================== */
+function buildDotNav(){
+  const nav = document.getElementById('dotNav'); nav.innerHTML = '';
+  document.querySelectorAll('.snap-section').forEach(sec=>{
+    const key = sec.dataset.section;
+    const dot = document.createElement('div'); dot.className='dot'; dot.dataset.target=key;
+    dot.innerHTML = `<span class="lbl">${SECTION_LABELS[key]||key}</span>`;
+    dot.addEventListener('click', ()=> gotoSection(key));
+    nav.appendChild(dot);
+  });
+}
+function bindNav(){
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.preventDefault(); gotoSection(el.dataset.nav); });
+  });
+}
+function gotoSection(key){ const el = document.getElementById(key); if(el) el.scrollIntoView({behavior:'smooth'}); }
+function updateActiveDot(){
+  const snap = document.getElementById('snap');
+  const mid = snap.scrollTop + snap.clientHeight/2;
+  let current = null;
+  document.querySelectorAll('.snap-section').forEach(sec=>{ if(sec.offsetTop <= mid) current = sec.dataset.section; });
+  document.querySelectorAll('.dotnav .dot').forEach(d=> d.classList.toggle('active', d.dataset.target === current));
+  const header = document.getElementById('siteHeader');
+  header.classList.toggle('solid', snap.scrollTop > 40 && current !== 'hero');
+}
+
+/* ===================== INIT ===================== */
+(async function init(){
+  const data = await loadData();
+  render(data);
+  const snap = document.getElementById('snap');
+  snap.addEventListener('scroll', updateActiveDot);
+  updateActiveDot();
+})();
+</script>
+</body>
+</html>
