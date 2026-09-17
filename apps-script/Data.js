@@ -32,6 +32,7 @@ function getPublicMaterials_() {
         link: row['링크'],
         spec: row['규격'],
         studentName: row['학생명'],
+        studentId: row['학생ID'],
         discipline: row['분야']
       };
     });
@@ -41,6 +42,7 @@ function getParticipants_() {
   return sheetRowsAsObjects_('참여자').map(function (row) {
     return {
       name: row['성명'],
+      studentId: row['학생ID'],
       sessionId: row['세션ID']
     };
   });

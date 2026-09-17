@@ -144,11 +144,13 @@
 | `link` | 링크 |
 | `spec` | 규격 |
 | `studentName` | 학생명 |
+| `studentId` | 학생ID — 작품(영상)·작품(이미지)이고 동명이인일 때만 값이 있음. 동명이인 구분용(`docs/sheet-schema.md` 13절) |
 | `discipline` | 분야 |
 
 | `participants[]` | 시트 열 |
 |---|---|
 | `name` | 성명 |
+| `studentId` | 학생ID — 동명이인일 때만 값이 있음. 동명이인 구분용(`docs/sheet-schema.md` 13절) |
 | `sessionId` | 세션ID |
 
 `settings`는 `{ 항목: 값 }` 형태의 객체다 (예: `{ "영상서비스": "Vimeo" }`).

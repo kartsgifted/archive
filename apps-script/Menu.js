@@ -29,12 +29,40 @@ function runInspection() {
   });
 
   var isWork = { '작품(영상)': true, '작품(이미지)': true };
-  sheetRowsAsObjects_('자료').forEach(function (m, idx) {
+  var materials = sheetRowsAsObjects_('자료');
+  materials.forEach(function (m, idx) {
     if (isWork[m['자료유형']]) return; // 학생 작품은 세션ID 없어도 정상 (docs/sheet-schema.md 5절)
     if (!m['세션ID']) {
       issues.push('자료 ' + (idx + 2) + '행: 세션ID가 비어있음');
     } else if (!seenIds[m['세션ID']]) {
       issues.push('자료 ' + (idx + 2) + '행: 세션ID "' + m['세션ID'] + '"가 「일정」에 없음');
+    }
+  });
+
+  // 학생ID는 동명이인 구분의 유일한 근거라, 오타가 있으면 조용히 구분이 깨진다 (docs/sheet-schema.md 13절).
+  var studentIds = {};
+  sheetRowsAsObjects_('학생').forEach(function (s, idx) {
+    var id = s['학생ID'];
+    if (!id) return;
+    if (studentIds[id]) {
+      issues.push('학생 ' + (idx + 2) + '행: 학생ID "' + id + '" 중복');
+    } else {
+      studentIds[id] = true;
+    }
+  });
+
+  var attendanceValues = getSheet_('출석부').getDataRange().getValues();
+  for (var r = 1; r < attendanceValues.length; r++) {
+    var attendanceStudentId = attendanceValues[r][1];
+    if (attendanceStudentId && !studentIds[attendanceStudentId]) {
+      issues.push('출석부 ' + (r + 1) + '행: 학생ID "' + attendanceStudentId + '"가 「학생」 탭에 없음');
+    }
+  }
+
+  materials.forEach(function (m, idx) {
+    var materialStudentId = m['학생ID'];
+    if (materialStudentId && !studentIds[materialStudentId]) {
+      issues.push('자료 ' + (idx + 2) + '행: 학생ID "' + materialStudentId + '"가 「학생」 탭에 없음');
     }
   });
 

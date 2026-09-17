@@ -12,7 +12,7 @@
 | 이용자 | — | 교강사 · 운영진 · 발주기관. 접근코드와 이름으로 들어온다 |
 | 열람 화면 | GitHub Pages | 일정표와 자료 목록을 표시한다. 자료를 보관하지 않고 화면 구성만 담당한다 |
 | 스크립트 관문 | Google Apps Script 웹앱 | 접근코드를 확인한 뒤에만 자료를 내보낸다. 서명 키는 Script Properties에 둔다 |
-| 자료 관리 시트 | Google Sheets (8개 탭) | 일정·자료·참여자·접근코드·로그를 기록한다. 공유하지 않는다 |
+| 자료 관리 시트 | Google Sheets (9개 탭) | 일정·자료·참여자·접근코드·로그를 기록한다. 공유하지 않는다 |
 | 사진 보관소 | Google Drive | 사진을 보관한다. 공유하지 않는다. 대표 사진은 관문을 거쳐 축소본으로 전달된다 |
 | 영상 보관소 | Vimeo | 1080p 압축본을 비공개로 보관한다. 도메인 제한으로 이 사이트 밖에서는 재생되지 않는다 |
 | 운영진 | — | 시트에 행을 추가하고, 사진과 영상을 올린다 |
@@ -51,7 +51,7 @@ flowchart LR
 
     subgraph GOOGLE["구글 계정 · 공유 안 함"]
         gate["스크립트 관문<br/>Apps Script 웹앱<br/>서명 키: Script Properties"]
-        sheet["자료 관리 시트<br/>Google Sheets · 8개 탭"]
+        sheet["자료 관리 시트<br/>Google Sheets · 9개 탭"]
         drive["사진 보관소<br/>Google Drive"]
     end
 
@@ -88,7 +88,7 @@ flowchart LR
     staff["운영진"]
 
     subgraph GOOGLE["구글 계정 · 공유 안 함"]
-        sheet["자료 관리 시트<br/>Google Sheets · 8개 탭"]
+        sheet["자료 관리 시트<br/>Google Sheets · 9개 탭"]
         drive["사진 보관소<br/>Google Drive"]
     end
 
