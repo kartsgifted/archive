@@ -3,11 +3,13 @@
  * (분야 코드는 auth 성공 직후 firstView로 바로 건너뜀, app.js routeFromFirstView).
  * 그 외 사용자도 상단바 분야 전환으로 언제든 이 경로에 닿을 수 있다(docs/decisions.md "분야 이동").
  */
+// heroPosition: 일정표 배너처럼 가로로 짧게 자를 때 쓰는 object-position.
+// 인물 사진은 자칫 얼굴이 잘려 나갈 수 있어 분야별로 필요할 때만 지정한다(기본은 'center').
 const DISCIPLINE_INFO = {
   music: { name: '음악', english: 'MUSIC', photo: 'images/discipline-music.jpg', color: 'var(--music)' },
-  dance: { name: '무용', english: 'BALLET', photo: 'images/discipline-dance.jpg', color: 'var(--dance)' },
+  dance: { name: '무용', english: 'BALLET', photo: 'images/discipline-dance.jpg', color: 'var(--dance)', heroPosition: 'center 15%' },
   trad: { name: '전통예술', english: 'TRADITIONAL ARTS', photo: 'images/discipline-trad.jpg', color: 'var(--trad)' },
-  art: { name: '미술', english: 'ARTS', photo: 'images/discipline-art.jpg', color: 'var(--art)' }
+  art: { name: '미술', english: 'ARTS', photo: 'images/discipline-art.jpg', color: 'var(--art)', heroPosition: 'center 20%' }
 };
 
 // 자료 탭의 학생 작품 행은 세션ID가 비어 분야를 직접 기재한다(docs/sheet-schema.md 3-3절).

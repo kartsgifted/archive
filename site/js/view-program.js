@@ -3,18 +3,13 @@
  * 학생 작품은 프로그램 카드로 두지 않고 검색 → 인물 상세로만 노출한다
  * (docs/decisions.md 3절 "2026-09-17 결정").
  */
+// images/program-*.jpg는 아직 실제 프로그램 사진이 없어 분야 사진을 복사해 둔 자리표시용이다.
+// 실제 사진을 받으면 같은 이름으로 덮어쓰면 된다(코드 수정 불필요).
 const PROGRAM_INFO = [
-  { slug: 'workshop', num: '01', name: '워크숍', desc: '일자 × 시간대로 묶인 워크숍 세션' },
-  { slug: 'mentoring', num: '02', name: '심화 멘토링', desc: '분야 × 권역 × 회차로 묶인 심화 멘토링' },
-  { slug: 'camp', num: '03', name: '겨울 심화캠프', desc: '일자로 묶인 겨울 심화캠프' }
+  { slug: 'workshop', name: '워크숍', english: 'WORKSHOP', photo: 'images/program-workshop.jpg' },
+  { slug: 'mentoring', name: '심화 멘토링', english: 'MENTORING', photo: 'images/program-mentoring.jpg' },
+  { slug: 'camp', name: '겨울 심화캠프', english: 'WINTER CAMP', photo: 'images/program-camp.jpg' }
 ];
-
-function countByProgram(kr, program) {
-  if (!AppState.data) return null;
-  return AppState.data.sessions.filter(s => s.discipline === kr && s.program === program).length;
-}
-
-const PROGRAM_KR = { workshop: '워크숍', mentoring: '심화 멘토링', camp: '겨울 심화캠프' };
 
 function renderProgramView(discipline) {
   const info = DISCIPLINE_INFO[discipline];
@@ -31,41 +26,40 @@ function renderProgramView(discipline) {
   eyebrow.textContent = info.english;
   const title = document.createElement('div');
   title.className = 'hero-title';
-  title.textContent = `${info.name} · 프로그램을 선택해 주세요`;
+  title.textContent = '프로그램을 선택해 주세요';
   header.append(eyebrow, title);
 
-  const list = document.createElement('div');
-  list.className = 'program-list';
+  const grid = document.createElement('div');
+  grid.className = 'program-grid';
 
   PROGRAM_INFO.forEach(p => {
-    const count = countByProgram(Object.keys(DISCIPLINE_SLUG).find(k => DISCIPLINE_SLUG[k] === discipline), PROGRAM_KR[p.slug]);
-    const card = document.createElement('div');
-    card.className = 'program-card';
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.style.setProperty('--c', info.color);
 
-    const num = document.createElement('div');
-    num.className = 'program-num';
-    num.textContent = p.num;
+    const img = document.createElement('img');
+    img.src = p.photo;
+    img.alt = '';
 
-    const body = document.createElement('div');
-    body.className = 'program-body';
+    const scrim = document.createElement('div');
+    scrim.className = 'tile-scrim';
+
+    const content = document.createElement('div');
+    content.className = 'tile-content';
+    const eng = document.createElement('div');
+    eng.className = 'tile-eng';
+    eng.textContent = p.english;
     const name = document.createElement('div');
-    name.className = 'program-name';
+    name.className = 'tile-name';
     name.textContent = p.name;
-    const desc = document.createElement('div');
-    desc.className = 'program-desc';
-    desc.textContent = count === null ? p.desc : `${p.desc} · 세션 ${count}개`;
-    body.append(name, desc);
+    content.append(eng, name);
 
-    const arrow = document.createElement('div');
-    arrow.className = 'program-arrow';
-    arrow.textContent = '→';
-
-    card.append(num, body, arrow);
-    card.addEventListener('click', () => navigate(`#/${discipline}/${p.slug}`));
-    list.appendChild(card);
+    tile.append(img, scrim, createBrackets(), content);
+    tile.addEventListener('click', () => navigate(`#/${discipline}/${p.slug}`));
+    grid.appendChild(tile);
   });
 
-  el.append(header, list);
+  el.append(header, grid);
   showView('view-program');
   updateDisciplineSwitcher(discipline);
 }

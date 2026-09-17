@@ -166,31 +166,6 @@ function createBrackets() {
   return div;
 }
 
-/* ---------- 화면 스텁 (3.5~3.7에서 채움) ---------- */
-function renderPlaceholder(viewId, title, note) {
-  const el = document.getElementById(viewId);
-  el.replaceChildren();
-  const wrap = document.createElement('div');
-  wrap.className = 'placeholder';
-  const h = document.createElement('div');
-  h.className = 'placeholder-title';
-  h.textContent = title;
-  wrap.appendChild(h);
-  if (note) {
-    const p = document.createElement('div');
-    p.className = 'placeholder-note';
-    p.textContent = note;
-    wrap.appendChild(p);
-  }
-  el.appendChild(wrap);
-  showView(viewId);
-}
-
-registerRoute(/^\/(?<discipline>music|dance|trad|art)\/(?<program>workshop|mentoring|camp)$/, ({ discipline, program }) => renderPlaceholder('view-schedule', `${discipline}/${program} 일정표`, '3.5에서 구현 예정'));
-registerRoute(/^\/(?<discipline>music|dance|trad|art)\/(?<program>workshop|mentoring|camp)\/(?<sessionId>[^/]+)$/, ({ sessionId }) => renderPlaceholder('view-materials', `자료 목록 · ${sessionId}`, '3.6에서 구현 예정'));
-registerRoute(/^\/search\/?(?<query>.*)$/, ({ query }) => renderPlaceholder('view-search', `검색: ${decodeURIComponent(query || '')}`, '3.7에서 구현 예정'));
-registerRoute(/^\/person\/(?<key>[^/]+)$/, ({ key }) => renderPlaceholder('view-person', `인물 상세: ${decodeURIComponent(key)}`, '3.7에서 구현 예정'));
-
 document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.value.trim()) {
     navigate('#/search/' + encodeURIComponent(e.target.value.trim()));
