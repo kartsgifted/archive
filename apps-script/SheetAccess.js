@@ -1,17 +1,45 @@
 /**
- * 자료 관리 시트 접근 공통 함수. 컨테이너 바인딩 스크립트라
- * SpreadsheetApp.getActiveSpreadsheet()가 실행 방식과 무관하게 이 시트를 반환한다.
+ * 자료 관리 시트 접근 공통 함수. docs/sheet-schema.md 2절: 공통 시트 1 + 프로그램 시트 3.
+ * 공통 시트는 이 스크립트가 붙어 있는 시트라 getActiveSpreadsheet()로 연다(웹앱 실행 중에도 동일).
+ * 프로그램 시트는 Script Properties에 둔 ID로 연다(docs/sheet-schema.md 14절).
  */
 
-function getSheet_(name) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
-  if (!sheet) throw new Error('시트를 찾을 수 없음: ' + name);
+var PROGRAMS_ = [
+  { name: '워크숍', code: 'ws', prop: 'SHEET_ID_WORKSHOP' },
+  { name: '심화 멘토링', code: 'mt', prop: 'SHEET_ID_MENTORING' },
+  { name: '겨울 심화캠프', code: 'camp', prop: 'SHEET_ID_CAMP' }
+];
+
+// openById는 호출마다 수백 ms가 걸려, 한 번의 실행 안에서는 연 시트를 재사용한다.
+var openedProgramSpreadsheets_ = {};
+
+function getProgram_(code) {
+  for (var i = 0; i < PROGRAMS_.length; i++) {
+    if (PROGRAMS_[i].code === code) return PROGRAMS_[i];
+  }
+  throw new Error('알 수 없는 프로그램: ' + code);
+}
+
+function getProgramSpreadsheet_(program) {
+  if (!openedProgramSpreadsheets_[program.code]) {
+    var id = PropertiesService.getScriptProperties().getProperty(program.prop);
+    if (!id) throw new Error('스크립트 속성 ' + program.prop + '가 없음 — ' + program.name + ' 시트 ID를 넣을 것 (docs/sheet-schema.md 14절)');
+    openedProgramSpreadsheets_[program.code] = SpreadsheetApp.openById(id);
+  }
+  return openedProgramSpreadsheets_[program.code];
+}
+
+// program을 생략하면 공통 시트의 탭을 찾는다.
+function getSheet_(name, program) {
+  var spreadsheet = program ? getProgramSpreadsheet_(program) : SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(name);
+  if (!sheet) throw new Error('시트를 찾을 수 없음: ' + (program ? program.name + ' › ' : '') + name);
   return sheet;
 }
 
 // 첫 행을 헤더로 삼아 각 행을 { 헤더명: 값 } 객체로 반환한다. 빈 행은 건너뛴다.
-function sheetRowsAsObjects_(sheetName) {
-  var values = getSheet_(sheetName).getDataRange().getValues();
+function sheetRowsAsObjects_(sheetName, program) {
+  var values = getSheet_(sheetName, program).getDataRange().getValues();
   var headers = values[0];
   var rows = [];
   for (var i = 1; i < values.length; i++) {

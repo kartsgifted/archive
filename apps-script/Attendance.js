@@ -1,16 +1,17 @@
 /**
  * [출석부 변환] 메뉴. docs/sheet-schema.md 3-4: 1열=성명, 2열=학생ID(동명이인만),
- * 3열부터 수업인 「출석부」를 「참여자」(성명·학생ID·세션ID) 탭으로 바꾼다.
+ * 3열부터 수업인 「출석부」를 같은 프로그램 시트의 「참여자」(성명·학생ID·세션ID) 탭으로 바꾼다.
+ * 프로그램 시트마다 따로 변환하므로 다른 프로그램의 참여자는 건드리지 않는다.
  * 출석 표시 기호의 정확한 규격은 "확인 필요"(기존 출석부 파일 확인 후 확정)라,
  * 지금은 "칸이 비어있지 않으면 출석"으로 처리한다.
  */
 
-function convertAttendance() {
-  var attendanceValues = getSheet_('출석부').getDataRange().getValues();
+function convertAttendanceFor_(program) {
+  var attendanceValues = getSheet_('출석부', program).getDataRange().getValues();
   if (attendanceValues.length < 2) return;
 
   var headerRow = attendanceValues[0];
-  var sessions = sheetRowsAsObjects_('일정');
+  var sessions = sheetRowsAsObjects_('일정', program);
   var sessionIds = headerRow.slice(2).map(function (h) { return resolveSessionId_(h, sessions); });
 
   var participants = [];
@@ -27,7 +28,7 @@ function convertAttendance() {
     }
   }
 
-  var participantSheet = getSheet_('참여자');
+  var participantSheet = getSheet_('참여자', program);
   ensureParticipantHeaders_(participantSheet);
 
   var lastRow = participantSheet.getLastRow();

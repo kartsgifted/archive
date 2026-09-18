@@ -5,16 +5,18 @@
  * 문서에 나온 "기촬영분은 업로드 일시와 재생 시간을 대조해 초벌 연결" 방식(드라이브 메타데이터·
  * 영상 길이 대조)은 여기서 구현하지 않았다 — 문서 자체가 "향후 촬영분부터 적용"이라고 못박은
  * 신규 규칙이고, 과거 영상은 대조 기준이 불명확해 사람이 검수하며 연결해야 한다.
+ *
+ * 파일명에는 프로그램이 없어, 메뉴에서 고른 프로그램 시트 안에서만 일정을 찾는다.
  */
 
-function matchVideos() {
-  var sheet = getSheet_('자료');
+function matchVideosFor_(program) {
+  var sheet = getSheet_('자료', program);
   var values = sheet.getDataRange().getValues();
   var headers = values[0];
   var col = {};
   headers.forEach(function (h, i) { col[h] = i; });
 
-  var sessions = sheetRowsAsObjects_('일정');
+  var sessions = sheetRowsAsObjects_('일정', program);
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
