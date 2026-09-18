@@ -209,6 +209,31 @@ function buildWorkshopGrid(sessions, discipline, program) {
   return wrap;
 }
 
+// 모바일에는 스크롤바가 없어 표를 옆으로 밀 수 있다는 단서가 없다.
+// 스크롤 여유가 남아 있을 때만 오른쪽 페이드와 안내를 켠다.
+function withScrollHint(wrap) {
+  const shell = document.createElement('div');
+  shell.className = 'scroll-shell';
+
+  const hint = document.createElement('div');
+  hint.className = 'scroll-hint';
+  hint.textContent = '← 표를 옆으로 밀어 보세요';
+
+  shell.append(hint, wrap);
+
+  const update = () => {
+    shell.classList.toggle('has-more', wrap.scrollWidth - wrap.clientWidth - wrap.scrollLeft > 4);
+  };
+  wrap.addEventListener('scroll', () => {
+    if (wrap.scrollLeft > 0) shell.classList.add('scrolled');
+    update();
+  });
+  if (window.ResizeObserver) new ResizeObserver(update).observe(wrap);
+  requestAnimationFrame(update);
+
+  return shell;
+}
+
 /* ---------- 심화 멘토링: 권역(열) × 회차(행) 격자 ---------- */
 function buildMentoringGrid(sessions, discipline, program) {
   const regions = Array.from(new Set(sessions.map(s => s.region))).sort((a, b) => a.localeCompare(b, 'ko'));
@@ -356,9 +381,9 @@ function renderScheduleView(discipline, program) {
   if (sessions.length === 0) {
     body.appendChild(renderScheduleEmptyState());
   } else if (program === 'workshop') {
-    body.appendChild(buildWorkshopGrid(sessions, discipline, program));
+    body.appendChild(withScrollHint(buildWorkshopGrid(sessions, discipline, program)));
   } else if (program === 'mentoring') {
-    body.appendChild(buildMentoringGrid(sessions, discipline, program));
+    body.appendChild(withScrollHint(buildMentoringGrid(sessions, discipline, program)));
   } else if (program === 'camp') {
     body.appendChild(buildCampCards(sessions, discipline, program));
   }
