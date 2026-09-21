@@ -50,25 +50,6 @@ img { display: block; }
 .brackets i:nth-child(3) { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; }
 .brackets i:nth-child(4) { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; }
 
-/* ---------- 부팅 화면 (기존 세션 확인 중) ---------- */
-#boot-screen {
-  position: relative; min-height: 100vh; background: #000;
-  display: flex; align-items: center; justify-content: center;
-}
-.boot-content { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.boot-spinner {
-  width: 32px; height: 32px;
-  border: 2px solid var(--line);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: boot-spin .8s linear infinite;
-}
-@keyframes boot-spin {
-  to { transform: rotate(360deg); }
-}
-.boot-error { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 320px; text-align: center; }
-.boot-error-text { font-size: 13px; color: var(--cream-dim); line-height: 1.6; }
-
 /* ---------- 로그인 화면 ---------- */
 #gate-screen {
   position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center;

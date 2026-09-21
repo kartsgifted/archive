@@ -60,28 +60,37 @@ function getParticipants_() {
   });
 }
 
-// photo 요청 전용: 링크(Drive 파일ID)로 「자료」 행을 찾되, 사진 계열(사진·작품(이미지))이고
-// 공개여부 = 공개인 것만 인정한다. docs/decisions.md 6절: 요청 시점에도 공개여부를 다시 확인한다.
-// 학생 작품은 세션ID가 없어 소속 시트를 알 수 없으므로 세 시트를 모두 찾는다.
+// photo 요청 전용: 링크(Drive 파일ID)로 자료를 찾되, 사진 계열(사진·작품(이미지))만 인정한다.
+// getDataPayload_()가 공개여부 = 공개인 행만 담으므로, 요청 시점에도 공개여부가 다시 확인된다
+// (docs/decisions.md 6절). 시트가 편집되면 캐시 버전이 올라가 비공개로 바꾼 자료는 곧바로 빠진다.
 function findPublicPhotoMaterial_(fileId) {
   var photoTypes = { '사진': true, '작품(이미지)': true };
-  for (var p = 0; p < PROGRAMS_.length; p++) {
-    var rows = sheetRowsAsObjects_('자료', PROGRAMS_[p]);
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
-      if (row['링크'] === fileId && photoTypes[row['자료유형']] && row['공개여부'] === '공개') {
-        return row;
-      }
-    }
+  var materials = getDataPayload_().materials;
+  for (var i = 0; i < materials.length; i++) {
+    if (materials[i].link === fileId && photoTypes[materials[i].type]) return materials[i];
   }
   return null;
 }
 
 // { 항목: 값 } 형태로 돌려준다.
 function getSettingsMap_() {
-  var map = {};
-  sheetRowsAsObjects_('설정').forEach(function (row) {
-    if (row['항목']) map[row['항목']] = row['값'];
+  return cached_('settings', function () {
+    var map = {};
+    sheetRowsAsObjects_('설정').forEach(function (row) {
+      if (row['항목']) map[row['항목']] = row['값'];
+    });
+    return map;
   });
-  return map;
+}
+
+// data 응답 본문. 시트 4개를 여는 가장 무거운 작업이라 캐시에 담아 둔다 (docs/decisions.md 9절).
+function getDataPayload_() {
+  return cached_('data', function () {
+    return {
+      sessions: getSessions_(),
+      materials: getPublicMaterials_(),
+      participants: getParticipants_(),
+      settings: getSettingsMap_()
+    };
+  });
 }

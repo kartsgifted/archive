@@ -54,8 +54,16 @@ function sheetRowsAsObjects_(sheetName, program) {
   return rows;
 }
 
+// 「코드」 탭은 auth·ping·data 모든 요청이 읽으므로 캐시에서 본다 (docs/decisions.md 9절).
+// 사용기한은 캐시에 담기 전에 문자열로 바꾼다 — Date를 JSON에 넣으면 형식이 달라져
+// isWithinExpiry_가 해석하지 못하고 기한이 지난 것으로 판단한다.
 function findCodeRow_(code) {
-  var rows = sheetRowsAsObjects_('코드');
+  var rows = cached_('codes', function () {
+    return sheetRowsAsObjects_('코드').map(function (row) {
+      row['사용기한'] = formatDateCell_(row['사용기한']);
+      return row;
+    });
+  });
   for (var i = 0; i < rows.length; i++) {
     if (rows[i]['코드'] === code) return rows[i];
   }
@@ -83,7 +91,8 @@ function isWithinExpiry_(expiryValue) {
   if (Object.prototype.toString.call(expiryValue) === '[object Date]') {
     expiry = new Date(expiryValue.getFullYear(), expiryValue.getMonth(), expiryValue.getDate(), 23, 59, 59);
   } else {
-    expiry = new Date(String(expiryValue) + 'T23:59:59+09:00');
+    // 캐시를 거친 값은 "2027-03-31T00:00:00.000Z"처럼 올 수 있어 날짜 부분만 쓴다.
+    expiry = new Date(String(expiryValue).slice(0, 10) + 'T23:59:59+09:00');
   }
   return Date.now() <= expiry.getTime();
 }

@@ -64,6 +64,7 @@
 | 필드 | 설명 |
 |---|---|
 | `action` | `"auth"` |
+| `requestId` | 요청마다 새로 만드는 값. 화면이 응답 지연 시 같은 요청을 한 번 더 보내므로(예비 요청, `docs/decisions.md` 9절), 관문은 같은 `requestId`면 먼저 만든 응답을 그대로 돌려준다. 없으면 매번 새로 처리한다 |
 | `code` | 접근코드 (`KA-MUSIC-7Q4F` 형식) |
 | `name` | 입력한 이름. 로그·기록용이며 별도 명단과 대조하지 않음 |
 | `deviceId` | `localStorage`의 기기ID |

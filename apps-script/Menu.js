@@ -10,6 +10,7 @@ function onOpen() {
     .addSubMenu(programMenu_(ui, 'Camp', '겨울 심화캠프'))
     .addSeparator()
     .addItem('점검', 'runInspection')
+    .addItem('캐시 비우기', 'clearCacheNow')
     .addToUi();
 }
 
@@ -20,17 +21,30 @@ function programMenu_(ui, suffix, label) {
     .addItem('영상 매칭', 'matchVideos' + suffix);
 }
 
-function generateSessionIdsWorkshop() { generateSessionIdsFor_(getProgram_('ws')); }
-function generateSessionIdsMentoring() { generateSessionIdsFor_(getProgram_('mt')); }
-function generateSessionIdsCamp() { generateSessionIdsFor_(getProgram_('camp')); }
+// 스크립트가 쓴 값에는 편집 트리거가 반응하지 않으므로, 메뉴 작업 뒤에는 캐시를 직접 비운다.
+function runAndClearCache_(program, work) {
+  work(program);
+  bumpCacheVersion_();
+}
 
-function convertAttendanceWorkshop() { convertAttendanceFor_(getProgram_('ws')); }
-function convertAttendanceMentoring() { convertAttendanceFor_(getProgram_('mt')); }
-function convertAttendanceCamp() { convertAttendanceFor_(getProgram_('camp')); }
+function generateSessionIdsWorkshop() { runAndClearCache_(getProgram_('ws'), generateSessionIdsFor_); }
+function generateSessionIdsMentoring() { runAndClearCache_(getProgram_('mt'), generateSessionIdsFor_); }
+function generateSessionIdsCamp() { runAndClearCache_(getProgram_('camp'), generateSessionIdsFor_); }
 
-function matchVideosWorkshop() { matchVideosFor_(getProgram_('ws')); }
-function matchVideosMentoring() { matchVideosFor_(getProgram_('mt')); }
-function matchVideosCamp() { matchVideosFor_(getProgram_('camp')); }
+function convertAttendanceWorkshop() { runAndClearCache_(getProgram_('ws'), convertAttendanceFor_); }
+function convertAttendanceMentoring() { runAndClearCache_(getProgram_('mt'), convertAttendanceFor_); }
+function convertAttendanceCamp() { runAndClearCache_(getProgram_('camp'), convertAttendanceFor_); }
+
+function matchVideosWorkshop() { runAndClearCache_(getProgram_('ws'), matchVideosFor_); }
+function matchVideosMentoring() { runAndClearCache_(getProgram_('mt'), matchVideosFor_); }
+function matchVideosCamp() { runAndClearCache_(getProgram_('camp'), matchVideosFor_); }
+
+// 편집 트리거가 동작하지 않았거나 화면이 옛 자료를 보여줄 때 쓰는 수동 장치.
+function clearCacheNow() {
+  bumpCacheVersion_();
+  flushLogBuffer_();
+  SpreadsheetApp.getUi().alert('캐시를 비웠습니다. 다음 접속부터 시트를 새로 읽습니다.');
+}
 
 // 빠진 값·중복·연결 안 된 자료를 공통 시트와 세 프로그램 시트 전체에서 찾는다 (docs/sheet-schema.md 10절).
 function runInspection() {
