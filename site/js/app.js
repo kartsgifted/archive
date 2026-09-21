@@ -17,7 +17,6 @@ const AppState = {
   pingTimer: null
 };
 
-const bootScreen = document.getElementById('boot-screen');
 const gateScreen = document.getElementById('gate-screen');
 const appScreen = document.getElementById('app-screen');
 const codeInput = document.getElementById('code-input');
@@ -173,54 +172,20 @@ document.getElementById('search-input').addEventListener('keydown', e => {
 });
 
 /* ---------- 부트스트랩 ---------- */
-// 토큰 유무·만료는 동기적으로 바로 알 수 있다. 세션이 있어 보이면 로그인 폼 대신
-// 중립적인 로딩 화면을 먼저 보여주고(ping 확인 중 "로그아웃됐다가 다시 로그인"처럼
-// 보이지 않게), 없으면 로그인 화면을 바로 보여준다.
+// 토큰 유무·만료는 동기적으로 바로 알 수 있다. 세션이 살아 있으면 자료를 기다리지 않고
+// 곧바로 화면에 들어가고, 자료는 로그인 직후와 똑같이 뒤에서 받는다
+// (docs/decisions.md 9절: 새로고침이 data 응답을 기다려 오래 걸리던 문제).
+// 토큰이 실제로 무효면 data 요청이 실패하면서 logout()이 로그인 화면으로 되돌린다.
 (function bootSync() {
   const token = getToken();
   if (token && Date.now() < getTokenExpiresAt()) {
-    bootScreen.classList.remove('hidden');
-  } else {
-    clearToken();
-    gateScreen.classList.remove('hidden');
-  }
-})();
-
-const bootSpinner = document.getElementById('boot-spinner');
-const bootError = document.getElementById('boot-error');
-const bootErrorText = document.getElementById('boot-error-text');
-document.getElementById('boot-retry-btn').addEventListener('click', () => {
-  const token = getToken();
-  if (token) attemptBootLoad(token);
-});
-
-// data 요청도 ping과 똑같이 토큰을 검증하므로(apps-script/Handlers.js handleData_),
-// 새로고침 때는 ping을 따로 부르지 않고 data 한 번으로 "세션 확인 + 자료 조회"를 끝낸다.
-async function attemptBootLoad(token) {
-  bootError.classList.add('hidden');
-  bootSpinner.classList.remove('hidden');
-  try {
-    AppState.data = await api.data(token);
-    bootScreen.classList.add('hidden');
     appScreen.classList.remove('hidden');
     scheduleTokenRenewal();
     renderDisciplineSwitcher();
     handleRouteChange();
-  } catch (e) {
-    if (e.code === 'TOKEN_EXPIRED' || e.code === 'TOKEN_INVALID') {
-      clearToken();
-      bootScreen.classList.add('hidden');
-      gateScreen.classList.remove('hidden');
-      return;
-    }
-    bootSpinner.classList.add('hidden');
-    bootErrorText.textContent = GATE_ERROR_MESSAGE[e.code] || GATE_ERROR_MESSAGE.SERVER_ERROR;
-    bootError.classList.remove('hidden');
+    loadAppDataInBackground();
+  } else {
+    clearToken();
+    gateScreen.classList.remove('hidden');
   }
-}
-
-(function init() {
-  const token = getToken();
-  if (!token) return; // bootSync에서 이미 gate-screen을 보여준 상태
-  attemptBootLoad(token);
 })();

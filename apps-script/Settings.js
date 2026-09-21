@@ -3,11 +3,7 @@
  * 담당자가 시트에 행을 안 넣어도 기본값으로 동작하고, 넣으면 코드 수정 없이 바뀐다.
  */
 function getSetting_(key, fallback) {
-  var rows = sheetRowsAsObjects_('설정');
-  for (var i = 0; i < rows.length; i++) {
-    if (rows[i]['항목'] === key && rows[i]['값'] !== '' && rows[i]['값'] != null) {
-      return rows[i]['값'];
-    }
-  }
-  return fallback;
+  var map = getSettingsMap_();
+  var value = map[key];
+  return (value === '' || value == null) ? fallback : value;
 }
