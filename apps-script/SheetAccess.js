@@ -54,12 +54,12 @@ function sheetRowsAsObjects_(sheetName, program) {
   return rows;
 }
 
-// 「코드」 탭은 auth·ping·data 모든 요청이 읽으므로 캐시에서 본다 (docs/decisions.md 9절).
+// 「접근코드」 탭은 auth·ping·data 모든 요청이 읽으므로 캐시에서 본다 (docs/decisions.md 9절).
 // 사용기한은 캐시에 담기 전에 문자열로 바꾼다 — Date를 JSON에 넣으면 형식이 달라져
 // isWithinExpiry_가 해석하지 못하고 기한이 지난 것으로 판단한다.
 function findCodeRow_(code) {
   var rows = cached_('codes', function () {
-    return sheetRowsAsObjects_('코드').map(function (row) {
+    return sheetRowsAsObjects_('접근코드').map(function (row) {
       row['사용기한'] = formatDateCell_(row['사용기한']);
       return row;
     });
