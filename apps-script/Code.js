@@ -27,6 +27,8 @@ function route_(req) {
       return handleData_(req);
     case 'photo':
       return handlePhoto_(req);
+    case 'photos':
+      return handlePhotos_(req);
     default:
       return jsonResponse_(false, 'SERVER_ERROR', null);
   }

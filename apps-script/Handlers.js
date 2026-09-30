@@ -110,3 +110,52 @@ function handlePhoto_(req) {
     return jsonResponse_(false, 'NOT_FOUND', null);
   }
 }
+
+var PHOTOS_MAX_FILE_BYTES_ = 1024 * 1024;      // 한 장 상한 1MB
+var PHOTOS_MAX_TOTAL_BYTES_ = 4 * 1024 * 1024; // 합계 상한 4MB
+
+// docs/api.md 3-5. 세션 하나의 공개 사진을 한 번에 담는다(자료 페이지 진입 시 미리 받기용).
+// 사진 목록은 화면이 아니라 관문이 공개 자료에서 찾는다. 크기는 내용을 읽기 전에 확인해,
+// 큰 사진과 합계 상한을 넘긴 사진은 skipped로 돌려 화면이 클릭 시 photo로 받게 한다.
+function handlePhotos_(req) {
+  var result = verifyToken_(req.token);
+  if (!result.valid) return jsonResponse_(false, result.error, null);
+
+  var sessionId = req.sessionId;
+  if (!sessionId) return jsonResponse_(false, 'NOT_FOUND', null);
+
+  var seen = {};
+  var fileIds = [];
+  getDataPayload_().materials.forEach(function (m) {
+    if (m.sessionId !== sessionId || m.type !== '사진' || !m.link) return;
+    var fileId = String(m.link);
+    if (seen[fileId]) return; // 같은 파일을 여러 행에 적었으면 한 번만 담는다
+    seen[fileId] = true;
+    fileIds.push(fileId);
+  });
+
+  var photos = [];
+  var skipped = [];
+  var total = 0;
+  var budgetSpent = false;
+  fileIds.forEach(function (fileId) {
+    if (budgetSpent) { skipped.push(fileId); return; } // 합계를 넘긴 뒤로는 드라이브를 열지 않는다
+    try {
+      var file = DriveApp.getFileById(fileId);
+      var size = file.getSize();
+      if (size >= PHOTOS_MAX_FILE_BYTES_) { skipped.push(fileId); return; }
+      if (total + size > PHOTOS_MAX_TOTAL_BYTES_) { budgetSpent = true; skipped.push(fileId); return; }
+      var blob = file.getBlob();
+      photos.push({
+        fileId: fileId,
+        base64: Utilities.base64Encode(blob.getBytes()),
+        mimeType: blob.getContentType()
+      });
+      total += size;
+    } catch (err) {
+      skipped.push(fileId); // 열 수 없는 파일은 클릭 시 photo가 NOT_FOUND로 알려 준다
+    }
+  });
+
+  return jsonResponse_(true, null, { photos: photos, skipped: skipped });
+}

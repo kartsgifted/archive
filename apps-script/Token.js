@@ -18,7 +18,7 @@ function signToken_(payload) {
   return payloadB64 + '.' + sigB64;
 }
 
-// 「코드」 탭의 현재 버전 값으로 새 토큰을 만든다 (auth·ping 공용).
+// 「접근코드」 탭의 현재 버전 값으로 새 토큰을 만든다 (auth·ping 공용).
 function issueToken_(codeRow) {
   var expiresAt = Date.now() + TOKEN_LIFETIME_MS_;
   var token = signToken_({ code: codeRow['코드'], ver: Number(codeRow['버전']), exp: expiresAt });

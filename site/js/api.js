@@ -67,8 +67,9 @@ async function requestOnce(body, signal) {
  * (docs/decisions.md 9절 "응답 속도"). 지연은 요청마다 무작위로 걸리므로,
  * 3초 안에 응답이 없으면 같은 요청을 한 번 더 보내고 먼저 오는 응답을 쓴다.
  * auth는 requestId로 관문이 중복을 걸러 토큰·로그가 두 번 생기지 않는다.
+ * 뒤에서 미리 받는 요청(photos)은 서두를 필요가 없어 hedge: false로 예비 요청을 보내지 않는다.
  */
-function callGateway(body) {
+function callGateway(body, { hedge = true } = {}) {
   return new Promise((resolve, reject) => {
     const controllers = [];
     let inFlight = 0;
@@ -103,7 +104,7 @@ function callGateway(body) {
     };
 
     send();
-    hedgeTimer = setTimeout(() => { if (!settled) send(); }, HEDGE_AFTER_MS);
+    if (hedge) hedgeTimer = setTimeout(() => { if (!settled) send(); }, HEDGE_AFTER_MS);
   });
 }
 
@@ -123,5 +124,9 @@ const api = {
   },
   async photo(token, fileId) {
     return callGateway({ action: 'photo', token, fileId });
+  },
+  // docs/api.md 3-5. 자료 페이지 진입 시 뒤에서 한 번 보내는 미리 받기용 요청
+  async photos(token, sessionId) {
+    return callGateway({ action: 'photos', token, sessionId }, { hedge: false });
   }
 };

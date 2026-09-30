@@ -141,6 +141,8 @@ function logout() {
   if (AppState.pingTimer) clearInterval(AppState.pingTimer);
   clearToken();
   AppState.data = null;
+  closeMaterialModal(); // 모달은 앱 화면 밖에 있어, 토큰 만료로 로그아웃되면 사진이 로그인 화면 위에 남는다
+  clearPhotoCache();    // 미리 받아 둔 사진을 메모리에서 비운다
   appScreen.classList.add('hidden');
   gateScreen.classList.remove('hidden');
   codeInput.value = '';

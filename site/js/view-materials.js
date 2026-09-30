@@ -3,7 +3,7 @@
  * - 세션에 속한 자료를 영상 · 사진 탭으로 나열 (작품은 세션ID가 없어 이 화면 대상이 아님, 3.7 인물 상세에서 다룸)
  * - 참여자 칩은 세션 단위로 한 번만 표시 (참여자 탭이 세션ID 단위라 자료별 구분이 없음)
  * - 영상은 화면 안에서 Vimeo로 재생하고 새 탭으로 열지 않는다(도메인 제한이 사이트 밖에서 무력화되므로).
- *   사진은 photo 요청으로 축소본을 받아 확대 표시한다.
+ *   사진은 진입 시 photos 요청으로 미리 받아 두고, 빠진 것은 클릭 시 photo 요청으로 받아 확대 표시한다.
  * - 사진묶음(전체 사진 폴더) 열람 방식은 아직 미정이라(docs/decisions.md 9절) 항목만 보여주고 클릭은 막는다.
  */
 function renderMaterialsEmptyState(title, note) {
@@ -131,6 +131,95 @@ function sessionRoute(session) {
   return `#/${slugEntry[1]}/${programInfo.slug}/${session.sessionId}`;
 }
 
+/* ---------- 사진 보관함 (미리 받기 + 메모리 보관, 2026-09-30 결정) ----------
+ * 사진은 요청 한 번의 왕복(약 3초)이 크기보다 커서, 자료 페이지에 들어가면 photos 요청으로
+ * 그 수업의 사진을 한 번에 받아 메모리에 담아 둔다(docs/api.md 3-5). 묶음에서 빠진 큰 사진과
+ * 인물 상세의 사진은 클릭할 때 photo로 받고, 받은 것은 같은 보관함에 담는다.
+ * 디스크(sessionStorage 등)에는 쓰지 않는다 — 탭을 닫으면 사라지고, 로그아웃하면 비운다.
+ */
+const PHOTO_CACHE_MAX_CHARS = 30 * 1024 * 1024; // 약 30MB. 넘으면 가장 오래 안 본 사진부터 버린다
+
+const photoStore = {
+  cache: new Map(),   // fileId → data URL (Map 순서 = 최근에 본 순서)
+  chars: 0,
+  pending: new Map(), // fileId → 받는 중인 요청(묶음 또는 한 장). 같은 사진을 두 번 요청하지 않게 한다
+  generation: 0       // 로그아웃하면 올라가, 그 전에 보낸 요청의 결과를 버리게 한다
+};
+
+function photoDataUrl(photo) {
+  return `data:${photo.mimeType};base64,${photo.base64}`;
+}
+
+function cachePhoto(fileId, src) {
+  if (photoStore.cache.has(fileId)) photoStore.chars -= photoStore.cache.get(fileId).length;
+  photoStore.cache.delete(fileId);
+  photoStore.cache.set(fileId, src);
+  photoStore.chars += src.length;
+  while (photoStore.chars > PHOTO_CACHE_MAX_CHARS && photoStore.cache.size > 1) {
+    const [oldestId, oldestSrc] = photoStore.cache.entries().next().value;
+    photoStore.cache.delete(oldestId);
+    photoStore.chars -= oldestSrc.length;
+  }
+}
+
+function getCachedPhoto(fileId) {
+  const src = photoStore.cache.get(fileId);
+  if (!src) return null;
+  photoStore.cache.delete(fileId); // 최근에 본 것으로 옮긴다
+  photoStore.cache.set(fileId, src);
+  return src;
+}
+
+function clearPhotoCache() {
+  photoStore.cache.clear();
+  photoStore.chars = 0;
+  photoStore.pending.clear();
+  photoStore.generation++;
+}
+
+// 자료 페이지 진입 시 뒤에서 한 번 보낸다. 실패해도 조용히 넘어가고, 클릭하면 한 장씩 받는다.
+function prefetchSessionPhotos(sessionId, photoItems) {
+  const token = getToken();
+  if (!token) return;
+  const targets = [...new Set(photoItems.filter(m => m.type === '사진' && m.link).map(m => String(m.link)))]
+    .filter(id => !photoStore.cache.has(id) && !photoStore.pending.has(id));
+  if (targets.length === 0) return; // 공개 사진이 없거나 이미 다 받아 둔 수업
+
+  const generation = photoStore.generation;
+  const batch = api.photos(token, sessionId)
+    .then(res => {
+      if (generation !== photoStore.generation) return;
+      res.photos.forEach(p => cachePhoto(String(p.fileId), photoDataUrl(p)));
+    })
+    .catch(() => {})
+    .finally(() => {
+      targets.forEach(id => { if (photoStore.pending.get(id) === batch) photoStore.pending.delete(id); });
+    });
+  targets.forEach(id => photoStore.pending.set(id, batch));
+}
+
+// 보관함 → 받는 중인 요청 → 새 photo 요청 순서로 찾는다.
+// 묶음에서 빠진 사진은 묶음이 끝난 뒤 보관함에 없으므로 그때 한 장 요청으로 넘어간다.
+function loadPhotoSrc(fileId) {
+  const id = String(fileId);
+  const cached = getCachedPhoto(id);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = photoStore.pending.get(id);
+  if (pending) return pending.then(() => loadPhotoSrc(id));
+
+  const generation = photoStore.generation;
+  const request = api.photo(getToken(), id)
+    .then(res => {
+      const src = photoDataUrl(res);
+      if (generation === photoStore.generation) cachePhoto(id, src);
+      return src;
+    })
+    .finally(() => { if (photoStore.pending.get(id) === request) photoStore.pending.delete(id); });
+  photoStore.pending.set(id, request);
+  return request;
+}
+
 /* ---------- 열람 모달 (사이드바 목록 + 가운데 재생·확대, 2026-09-18 결정) ---------- */
 const materialModal = {
   el: null, closeBtn: null, eyebrow: null, title: null, videoFrame: null, photoFrame: null,
@@ -223,18 +312,27 @@ function loadMaterialAt(index) {
   materialModal.videoFrame.replaceChildren();
   materialModal.photoFrame.classList.remove('hidden');
   materialModal.photoFrame.replaceChildren();
+
+  const showPhoto = src => {
+    materialModal.photoFrame.replaceChildren();
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = material.fileName || '';
+    materialModal.photoFrame.appendChild(img);
+  };
+
+  // 미리 받아 둔 사진은 "불러오는 중"을 거치지 않고 바로 그린다
+  const cached = getCachedPhoto(String(material.link));
+  if (cached) { showPhoto(cached); return; }
+
   const status = document.createElement('div');
   status.className = 'photo-frame-status';
   status.textContent = '불러오는 중…';
   materialModal.photoFrame.appendChild(status);
 
-  api.photo(getToken(), material.link).then(res => {
+  loadPhotoSrc(material.link).then(src => {
     if (requestId !== materialModal.requestId) return; // 그 사이 다른 사진을 골랐거나 모달을 닫았음
-    materialModal.photoFrame.replaceChildren();
-    const img = document.createElement('img');
-    img.src = `data:${res.mimeType};base64,${res.base64}`;
-    img.alt = material.fileName || '';
-    materialModal.photoFrame.appendChild(img);
+    showPhoto(src);
   }).catch(() => {
     if (requestId !== materialModal.requestId) return;
     materialModal.photoFrame.replaceChildren();
@@ -330,6 +428,9 @@ function renderMaterialsView(discipline, program, sessionId) {
   el.append(header);
   if (participants.length > 0) el.append(participantsWrap);
   el.appendChild(buildMaterialsSection(videoItems, photoItems));
+
+  // 화면을 먼저 보여 주고 뒤에서 이 수업의 사진을 한 번에 받아 둔다(인물 상세에서는 하지 않음 — 사진이 많음)
+  prefetchSessionPhotos(sessionId, photoItems);
 
   showView('view-materials');
   updateDisciplineSwitcher(discipline);
