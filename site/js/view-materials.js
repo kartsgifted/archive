@@ -1,10 +1,12 @@
 /**
- * 자료 목록·보기 화면. docs/screens.md 6·7절.
- * - 세션에 속한 자료를 영상 · 사진 탭으로 나열 (작품은 세션ID가 없어 이 화면 대상이 아님, 3.7 인물 상세에서 다룸)
+ * 수업 자료 화면 + 열람기. docs/screens.md 6·7절.
+ * - 일정표 칸을 누르면 목록 카드를 거치지 않고 열람기(가운데 재생·확대 + 오른쪽 영상·사진 목록)를 바로 펼친다(2026-10-07 결정).
+ *   작품은 세션ID가 없어 이 화면 대상이 아님(인물 상세에서 다룸)
  * - 참여자 칩은 세션 단위로 한 번만 표시 (참여자 탭이 세션ID 단위라 자료별 구분이 없음)
  * - 영상은 화면 안에서 Vimeo로 재생하고 새 탭으로 열지 않는다(도메인 제한이 사이트 밖에서 무력화되므로).
  *   사진은 진입 시 photos 요청으로 미리 받아 두고, 빠진 것은 클릭 시 photo 요청으로 받아 확대 표시한다.
  * - 사진묶음(전체 사진 폴더) 열람 방식은 아직 미정이라(docs/decisions.md 9절) 항목만 보여주고 클릭은 막는다.
+ * - 인물 상세는 여러 수업의 자료가 섞여 있어 예전처럼 목록 카드 → 모달 열람기로 연다(buildMaterialsSection).
  */
 function renderMaterialsEmptyState(title, note) {
   const wrap = document.createElement('div');
@@ -66,7 +68,7 @@ function renderMaterialsList(container, items, onOpen) {
 }
 
 // 영상·사진 자료를 탭(둘 다 있을 때)이나 단일 목록(하나만 있을 때)으로 묶어서 보여준다.
-// 자료 목록 화면(세션 단위)과 인물 상세 화면(클래스 자료·학생 작품)이 함께 쓴다.
+// 인물 상세 화면(클래스 자료·학생 작품)이 쓰고, 카드를 누르면 모달 열람기로 연다.
 function buildMaterialsSection(videoItems, photoItems) {
   const wrap = document.createElement('div');
   const listContainer = document.createElement('div');
@@ -220,23 +222,235 @@ function loadPhotoSrc(fileId) {
   return request;
 }
 
-/* ---------- 열람 모달 (사이드바 목록 + 가운데 재생·확대, 2026-09-18 결정) ---------- */
-const materialModal = {
-  el: null, closeBtn: null, eyebrow: null, title: null, videoFrame: null, photoFrame: null,
-  sidebarHead: null, sidebarList: null,
-  type: null, items: [], index: 0, requestId: 0
-};
+/* ---------- 열람기 (사이드바 목록 + 가운데 재생·확대) ----------
+ * 수업 자료 화면에서는 화면 안에 바로 펼치고(2026-10-07 결정), 인물 상세에서는 모달로 띄운다(2026-09-18 결정).
+ * 둘 다 같은 함수로 그리며, 열람기마다 자기 상태를 따로 갖는다.
+ * - listType: 사이드바에 보이는 목록(영상·사진 탭), type·index: 가운데에 띄운 자료
+ *   → 영상을 틀어 둔 채 사진 탭을 둘러볼 수 있도록 둘을 나눠 둔다.
+ * - describe: 가운데 제목·목록 이름을 정한다. 기본은 파일명(모달), 수업 화면은 수업명(buildSessionViewer).
+ */
+function describeByFileName(viewer, type, index, material) {
+  const name = material.fileName || `${type === 'video' ? '영상' : '사진'} ${index + 1}`;
+  return { title: material.fileName || '', listLabel: name, fileLine: '' };
+}
+
+function createViewer(parts) {
+  return {
+    ...parts, lists: { video: [], photo: [] }, listType: null, type: null, index: -1, requestId: 0,
+    describe: describeByFileName,
+    startTime: 0 // 다음에 띄울 영상의 시작 시각(초). 시각 링크로 들어왔을 때 한 번만 쓴다
+  };
+}
+
+const VIMEO_ORIGIN = 'https://player.vimeo.com';
+
+// Vimeo 플레이어에 현재 재생 시각(초)을 묻는다. 플레이어가 쓰는 postMessage 규약을 그대로 써서
+// 외부 라이브러리(player.js) 없이 처리한다. 응답이 없으면 2초 뒤 실패로 본다.
+function requestVimeoCurrentTime(iframe) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      reject(new Error('timeout'));
+    }, 2000);
+    function onMessage(e) {
+      if (e.origin !== VIMEO_ORIGIN || e.source !== iframe.contentWindow) return;
+      let data = e.data;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (err) { return; }
+      }
+      if (!data || data.method !== 'getCurrentTime') return;
+      clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
+      resolve(Math.max(0, Math.floor(Number(data.value) || 0)));
+    }
+    window.addEventListener('message', onMessage);
+    iframe.contentWindow.postMessage({ method: 'getCurrentTime' }, VIMEO_ORIGIN);
+  });
+}
+
+// 75 → "01:15", 3920 → "1:05:20"
+function formatPlayTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+function clearViewer(viewer) {
+  viewer.videoFrame.replaceChildren();
+  viewer.videoFrame.classList.add('hidden');
+  viewer.photoFrame.replaceChildren();
+  viewer.photoFrame.classList.add('hidden');
+  viewer.lists = { video: [], photo: [] };
+  viewer.type = null;
+  viewer.index = -1;
+  viewer.requestId++; // 남아있던 사진 요청 결과를 무시하게 한다
+}
+
+function buildViewerTab(viewer, type, label) {
+  const tab = document.createElement('button');
+  tab.type = 'button';
+  tab.className = 'materials-tab' + (viewer.listType === type ? ' active' : '');
+  tab.textContent = `${label} (${viewer.lists[type].length})`;
+  tab.addEventListener('click', () => {
+    viewer.listType = type;
+    renderViewerSidebar(viewer);
+  });
+  return tab;
+}
+
+function renderViewerSidebar(viewer) {
+  const { video, photo } = viewer.lists;
+  // 영상·사진이 모두 있을 때만 탭으로 나누고, 한 종류뿐이면 「영상 목록 (N)」 제목만 둔다
+  if (video.length > 0 && photo.length > 0) {
+    const tabs = document.createElement('div');
+    tabs.className = 'sidebar-tabs';
+    tabs.append(buildViewerTab(viewer, 'video', '영상'), buildViewerTab(viewer, 'photo', '사진'));
+    viewer.sidebarHead.classList.add('has-tabs');
+    viewer.sidebarHead.replaceChildren(tabs);
+  } else {
+    viewer.sidebarHead.classList.remove('has-tabs');
+    viewer.sidebarHead.textContent = (viewer.listType === 'video' ? '영상 목록' : '사진 목록') + ` (${viewer.lists[viewer.listType].length})`;
+  }
+
+  viewer.sidebarList.replaceChildren();
+  viewer.lists[viewer.listType].forEach((m, i) => {
+    const isBundle = m.type === '사진묶음';
+    const isActive = viewer.listType === viewer.type && i === viewer.index;
+    const item = document.createElement('div');
+    item.className = 'sidebar-list-item' + (isActive ? ' active' : '') + (isBundle ? ' disabled' : '');
+
+    const index = document.createElement('div');
+    index.className = 'sidebar-list-index';
+    index.textContent = String(i + 1).padStart(2, '0');
+    item.appendChild(index);
+
+    const { listLabel, fileLine } = viewer.describe(viewer, viewer.listType, i, m);
+    const text = document.createElement('div');
+    text.className = 'sidebar-list-text';
+    const label = document.createElement('div');
+    label.className = 'sidebar-list-label';
+    label.textContent = listLabel;
+    text.appendChild(label);
+    if (fileLine) {
+      const file = document.createElement('div');
+      file.className = 'sidebar-list-file';
+      file.textContent = fileLine;
+      text.appendChild(file);
+    }
+    item.appendChild(text);
+
+    if (isBundle) {
+      // 사진묶음(전체 사진 폴더)은 열람 방식이 미정이라(docs/decisions.md 9절) 항목만 보여 준다
+      const note = document.createElement('div');
+      note.className = 'sidebar-list-note';
+      note.textContent = '열람 방식 확인 중';
+      item.appendChild(note);
+      viewer.sidebarList.appendChild(item);
+      return;
+    }
+
+    if (viewer.listType === 'video') {
+      const play = document.createElement('div');
+      play.className = 'sidebar-list-play';
+      play.textContent = '▶';
+      item.appendChild(play);
+    }
+
+    item.addEventListener('click', () => showViewerItem(viewer, viewer.listType, i));
+    viewer.sidebarList.appendChild(item);
+  });
+}
+
+function showViewerItem(viewer, type, index) {
+  viewer.listType = type;
+  viewer.type = type;
+  viewer.index = index;
+  renderViewerSidebar(viewer);
+  loadViewerItem(viewer);
+}
+
+function showViewerMessage(viewer, message) {
+  viewer.videoFrame.classList.add('hidden');
+  viewer.videoFrame.replaceChildren();
+  viewer.photoFrame.classList.remove('hidden');
+  const status = document.createElement('div');
+  status.className = 'photo-frame-status';
+  status.textContent = message;
+  viewer.photoFrame.replaceChildren(status);
+}
+
+function loadViewerItem(viewer) {
+  const material = viewer.lists[viewer.type][viewer.index];
+  viewer.requestId++;
+  const requestId = viewer.requestId;
+
+  const { title, fileLine } = viewer.describe(viewer, viewer.type, viewer.index, material);
+  viewer.eyebrow.textContent = viewer.type === 'video' ? '영상' : '사진';
+  viewer.title.textContent = title;
+  if (viewer.fileName) viewer.fileName.textContent = fileLine;
+  if (viewer.onItemShown) viewer.onItemShown(viewer);
+
+  if (viewer.type === 'video') {
+    viewer.photoFrame.classList.add('hidden');
+    viewer.photoFrame.replaceChildren();
+    viewer.videoFrame.classList.remove('hidden');
+    viewer.videoFrame.replaceChildren();
+    // 시각 링크로 들어왔으면 그 시각에 맞춰 띄운다(#t=초s, Vimeo 임베드 기본 기능). 재생은 이용자가 누른다
+    const start = viewer.startTime > 0 ? `#t=${viewer.startTime}s` : '';
+    viewer.startTime = 0;
+    const iframe = document.createElement('iframe');
+    iframe.src = `${VIMEO_ORIGIN}/video/${encodeURIComponent(material.link)}?title=0&byline=0&portrait=0${start}`;
+    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+    iframe.allowFullscreen = true;
+    viewer.videoFrame.appendChild(iframe);
+    return;
+  }
+
+  const showPhoto = src => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = material.fileName || '';
+    viewer.photoFrame.replaceChildren(img);
+  };
+
+  // 미리 받아 둔 사진은 "불러오는 중"을 거치지 않고 바로 그린다
+  const cached = getCachedPhoto(String(material.link));
+  if (cached) {
+    viewer.videoFrame.classList.add('hidden');
+    viewer.videoFrame.replaceChildren();
+    viewer.photoFrame.classList.remove('hidden');
+    showPhoto(cached);
+    return;
+  }
+
+  showViewerMessage(viewer, '불러오는 중…');
+  loadPhotoSrc(material.link).then(src => {
+    if (requestId !== viewer.requestId) return; // 그 사이 다른 자료를 골랐거나 열람기를 닫았음
+    showPhoto(src);
+  }).catch(() => {
+    if (requestId !== viewer.requestId) return;
+    showViewerMessage(viewer, '사진을 불러오지 못했습니다.');
+  });
+}
+
+/* ---------- 모달 열람기 (인물 상세에서 사용) ---------- */
+const materialModal = { el: null, closeBtn: null, viewer: null };
 
 function initMaterialModal() {
   if (materialModal.el) return;
   materialModal.el = document.getElementById('material-modal');
   materialModal.closeBtn = document.getElementById('material-modal-close');
-  materialModal.eyebrow = document.getElementById('material-modal-eyebrow');
-  materialModal.title = document.getElementById('material-modal-title');
-  materialModal.videoFrame = document.getElementById('material-video-frame');
-  materialModal.photoFrame = document.getElementById('material-photo-frame');
-  materialModal.sidebarHead = document.getElementById('material-sidebar-head');
-  materialModal.sidebarList = document.getElementById('material-sidebar-list');
+  materialModal.viewer = createViewer({
+    eyebrow: document.getElementById('material-modal-eyebrow'),
+    title: document.getElementById('material-modal-title'),
+    videoFrame: document.getElementById('material-video-frame'),
+    photoFrame: document.getElementById('material-photo-frame'),
+    sidebarHead: document.getElementById('material-sidebar-head'),
+    sidebarList: document.getElementById('material-sidebar-list')
+  });
 
   materialModal.closeBtn.addEventListener('click', closeMaterialModal);
   materialModal.el.addEventListener('click', e => { if (e.target === materialModal.el) closeMaterialModal(); });
@@ -246,121 +460,177 @@ function initMaterialModal() {
 function closeMaterialModal() {
   if (!materialModal.el) return;
   materialModal.el.classList.add('hidden');
-  materialModal.videoFrame.replaceChildren();
-  materialModal.videoFrame.classList.add('hidden');
-  materialModal.photoFrame.replaceChildren();
-  materialModal.photoFrame.classList.add('hidden');
-  materialModal.items = [];
-  materialModal.requestId++; // 남아있던 사진 요청 결과를 무시하게 한다
-}
-
-function renderMaterialSidebar() {
-  materialModal.sidebarHead.textContent = (materialModal.type === 'video' ? '영상 목록' : '사진 목록') + ` (${materialModal.items.length})`;
-  materialModal.sidebarList.replaceChildren();
-  materialModal.items.forEach((m, i) => {
-    const item = document.createElement('div');
-    item.className = 'sidebar-list-item' + (i === materialModal.index ? ' active' : '');
-
-    const index = document.createElement('div');
-    index.className = 'sidebar-list-index';
-    index.textContent = String(i + 1).padStart(2, '0');
-    item.appendChild(index);
-
-    const label = document.createElement('div');
-    label.className = 'sidebar-list-label';
-    label.textContent = m.fileName || `${materialModal.type === 'video' ? '영상' : '사진'} ${i + 1}`;
-    item.appendChild(label);
-
-    if (materialModal.type === 'video') {
-      const play = document.createElement('div');
-      play.className = 'sidebar-list-play';
-      play.textContent = '▶';
-      item.appendChild(play);
-    }
-
-    item.addEventListener('click', () => {
-      materialModal.index = i;
-      renderMaterialSidebar();
-      loadMaterialAt(i);
-    });
-    materialModal.sidebarList.appendChild(item);
-  });
-}
-
-function loadMaterialAt(index) {
-  const material = materialModal.items[index];
-  materialModal.requestId++;
-  const requestId = materialModal.requestId;
-
-  materialModal.eyebrow.textContent = materialModal.type === 'video' ? '영상' : '사진';
-  materialModal.title.textContent = material.fileName || '';
-
-  if (materialModal.type === 'video') {
-    materialModal.photoFrame.classList.add('hidden');
-    materialModal.photoFrame.replaceChildren();
-    materialModal.videoFrame.classList.remove('hidden');
-    materialModal.videoFrame.replaceChildren();
-    const iframe = document.createElement('iframe');
-    iframe.src = `https://player.vimeo.com/video/${encodeURIComponent(material.link)}?title=0&byline=0&portrait=0`;
-    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
-    iframe.allowFullscreen = true;
-    materialModal.videoFrame.appendChild(iframe);
-    return;
-  }
-
-  materialModal.videoFrame.classList.add('hidden');
-  materialModal.videoFrame.replaceChildren();
-  materialModal.photoFrame.classList.remove('hidden');
-  materialModal.photoFrame.replaceChildren();
-
-  const showPhoto = src => {
-    materialModal.photoFrame.replaceChildren();
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = material.fileName || '';
-    materialModal.photoFrame.appendChild(img);
-  };
-
-  // 미리 받아 둔 사진은 "불러오는 중"을 거치지 않고 바로 그린다
-  const cached = getCachedPhoto(String(material.link));
-  if (cached) { showPhoto(cached); return; }
-
-  const status = document.createElement('div');
-  status.className = 'photo-frame-status';
-  status.textContent = '불러오는 중…';
-  materialModal.photoFrame.appendChild(status);
-
-  loadPhotoSrc(material.link).then(src => {
-    if (requestId !== materialModal.requestId) return; // 그 사이 다른 사진을 골랐거나 모달을 닫았음
-    showPhoto(src);
-  }).catch(() => {
-    if (requestId !== materialModal.requestId) return;
-    materialModal.photoFrame.replaceChildren();
-    const err = document.createElement('div');
-    err.className = 'photo-frame-status';
-    err.textContent = '사진을 불러오지 못했습니다.';
-    materialModal.photoFrame.appendChild(err);
-  });
+  clearViewer(materialModal.viewer);
 }
 
 function openMaterialModal(type, items, startIndex) {
   initMaterialModal();
-  materialModal.type = type;
-  materialModal.items = items;
-  materialModal.index = startIndex >= 0 ? startIndex : 0;
-  renderMaterialSidebar();
-  loadMaterialAt(materialModal.index);
+  const viewer = materialModal.viewer;
+  viewer.lists = { video: type === 'video' ? items : [], photo: type === 'photo' ? items : [] };
+  showViewerItem(viewer, type, startIndex >= 0 ? startIndex : 0);
   materialModal.el.classList.remove('hidden');
 }
 
+/* ---------- 화면 안 열람기 (수업 자료 화면, 2026-10-07 결정) ---------- */
+let sessionViewer = null;
+
+// 다른 화면으로 옮기거나 로그아웃할 때 부른다. 숨긴 화면에 플레이어가 남으면 소리가 계속 나고, 사진이 DOM에 남는다.
+function clearSessionViewer() {
+  if (!sessionViewer) return;
+  clearViewer(sessionViewer);
+  sessionViewer.sidebarList.replaceChildren();
+  sessionViewer = null;
+}
+
+// 제목은 파일명 대신 수업명(「오프닝」)으로 보여 주고, 파일명은 아래에 작게 남긴다(2026-10-07).
+// 파일명은 원본 찾기표에서 하드의 원본 위치를 찾는 열쇠라 화면에서 없애지 않는다(docs/decisions.md 9절).
+function describeBySession(className) {
+  return (viewer, type, index, material) => {
+    if (material.type === '사진묶음') return { title: className, listLabel: '사진묶음', fileLine: material.fileName || '' };
+    const typeKr = type === 'video' ? '영상' : '사진';
+    const numbered = `${typeKr} ${index + 1}`;
+    return {
+      title: viewer.lists[type].length > 1 ? `${className} · ${numbered}` : className,
+      listLabel: numbered,
+      fileLine: material.fileName || ''
+    };
+  };
+}
+
+// 「현재 시각 링크 복사」: 지금 보고 있는 영상과 재생 시각을 붙인 사이트 주소를 복사한다(2026-10-07).
+// 받은 사람도 접근코드로 로그인해야 열리고, 로그인 뒤 이 주소로 이어진다(app.js enterApp).
+async function copyTimeLink(viewer, routeBase, toast) {
+  const iframe = viewer.videoFrame.querySelector('iframe');
+  if (!iframe || viewer.type !== 'video') return;
+  let seconds = null;
+  try { seconds = await requestVimeoCurrentTime(iframe); } catch (e) { /* 시각 없이 영상 링크만 복사 */ }
+
+  const params = new URLSearchParams({ v: String(viewer.index + 1) });
+  if (seconds > 0) params.set('t', String(seconds));
+  const url = `${location.origin}${location.pathname}#${routeBase}?${params}`;
+  const copied = await copyText(url);
+
+  if (!copied) showToast(toast, '복사하지 못했습니다. 다시 눌러 주세요.');
+  else if (seconds === null) showToast(toast, '재생 시각을 읽지 못해 영상 처음 링크를 복사했습니다.');
+  else showToast(toast, `${formatPlayTime(seconds)} 시점 링크를 복사했습니다.`);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    // 클립보드 권한이 막힌 브라우저용 예비 방법
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    area.remove();
+    return ok;
+  }
+}
+
+function showToast(toast, message) {
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toast.hideTimer);
+  toast.hideTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// options: { routeBase: '/music/workshop/세션ID', className, startVideo: 0부터, startTime: 초 }
+function buildSessionViewer(videoItems, photoItems, options) {
+  const panel = document.createElement('div');
+  panel.className = 'viewer-panel';
+
+  // 가운데 머리말·재생 칸은 모달과 같은 모양을 쓴다
+  const main = document.createElement('div');
+  main.className = 'viewer-main';
+  const head = document.createElement('div');
+  head.className = 'modal-head';
+  const headText = document.createElement('div');
+  headText.className = 'viewer-head-text';
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'modal-eyebrow';
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  const fileName = document.createElement('div');
+  fileName.className = 'viewer-file';
+  headText.append(eyebrow, title, fileName);
+
+  const actions = document.createElement('div');
+  actions.className = 'viewer-actions hidden';
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'ghost-btn';
+  copyBtn.textContent = '현재 시각 링크 복사';
+  const toast = document.createElement('div');
+  toast.className = 'viewer-toast';
+  toast.setAttribute('role', 'status');
+  actions.append(copyBtn, toast);
+  head.append(headText, actions);
+  const videoFrame = document.createElement('div');
+  videoFrame.className = 'video-frame hidden';
+  const photoFrame = document.createElement('div');
+  photoFrame.className = 'photo-frame hidden';
+  main.append(head, videoFrame, photoFrame);
+
+  const sidebar = document.createElement('div');
+  sidebar.className = 'viewer-sidebar';
+  const sidebarInner = document.createElement('div');
+  sidebarInner.className = 'viewer-sidebar-inner';
+  const sidebarHead = document.createElement('div');
+  sidebarHead.className = 'sidebar-head';
+  const sidebarList = document.createElement('div');
+  sidebarList.className = 'viewer-sidebar-list';
+  sidebarInner.append(sidebarHead, sidebarList);
+  sidebar.appendChild(sidebarInner);
+
+  panel.append(createBrackets(), main, sidebar);
+
+  const viewer = createViewer({ eyebrow, title, fileName, videoFrame, photoFrame, sidebarHead, sidebarList });
+  viewer.lists = { video: videoItems, photo: photoItems };
+  viewer.describe = describeBySession(options.className);
+  // 링크 복사 버튼은 가운데에 영상이 떠 있을 때만 보인다
+  viewer.onItemShown = v => actions.classList.toggle('hidden', v.type !== 'video');
+  copyBtn.addEventListener('click', () => copyTimeLink(viewer, options.routeBase, toast));
+
+  // 첫 영상을 띄우고(자동 재생은 하지 않음), 영상이 없으면 첫 사진을 띄운다.
+  // 시각 링크로 들어왔으면 그 영상을 그 시각에 맞춰 띄운다.
+  const firstPhoto = photoItems.findIndex(m => m.type !== '사진묶음');
+  const linkedVideo = options.startVideo >= 0 && options.startVideo < videoItems.length ? options.startVideo : -1;
+  if (linkedVideo >= 0) {
+    viewer.startTime = options.startTime > 0 ? options.startTime : 0;
+    showViewerItem(viewer, 'video', linkedVideo);
+  } else if (videoItems.length > 0) {
+    showViewerItem(viewer, 'video', 0);
+  } else if (firstPhoto >= 0) {
+    showViewerItem(viewer, 'photo', firstPhoto);
+  } else {
+    // 사진묶음만 있는 수업
+    viewer.listType = 'photo';
+    renderViewerSidebar(viewer);
+    eyebrow.textContent = '사진';
+    showViewerMessage(viewer, '사진묶음은 열람 방식을 확인하고 있습니다.');
+  }
+
+  sessionViewer = viewer;
+  return panel;
+}
+
 /* ---------- 화면 진입 ---------- */
-function renderMaterialsView(discipline, program, sessionId) {
+function renderMaterialsView(discipline, program, sessionId, query) {
   const disciplineInfo = DISCIPLINE_INFO[discipline];
   const disciplineKr = Object.keys(DISCIPLINE_SLUG).find(k => DISCIPLINE_SLUG[k] === discipline);
   const programInfo = PROGRAM_INFO.find(p => p.slug === program);
   if (!disciplineInfo || !programInfo) { navigate('#/'); return; }
 
   const el = document.getElementById('view-materials');
+  clearSessionViewer();
   el.replaceChildren();
 
   if (!AppState.data) {
@@ -427,13 +697,33 @@ function renderMaterialsView(discipline, program, sessionId) {
 
   el.append(header);
   if (participants.length > 0) el.append(participantsWrap);
-  el.appendChild(buildMaterialsSection(videoItems, photoItems));
 
-  // 화면을 먼저 보여 주고 뒤에서 이 수업의 사진을 한 번에 받아 둔다(인물 상세에서는 하지 않음 — 사진이 많음)
-  prefetchSessionPhotos(sessionId, photoItems);
+  if (videoItems.length === 0 && photoItems.length === 0) {
+    el.appendChild(renderMaterialsEmptyState('영상 준비중', '아직 등록된 영상·사진이 없습니다.'));
+  } else {
+    // 이 수업의 사진을 뒤에서 한 번에 받아 둔다(인물 상세에서는 하지 않음 — 사진이 많음).
+    // 열람기보다 먼저 보내야, 첫 사진을 띄울 때 한 장 요청을 따로 보내지 않고 이 묶음을 기다린다.
+    prefetchSessionPhotos(sessionId, photoItems);
+    const routeBase = `/${discipline}/${program}/${encodeURIComponent(sessionId)}`;
+    // 시각 링크(?v=영상 순번&t=초)로 들어온 경우. 숫자가 아니면 무시하고 첫 영상을 띄운다
+    const params = new URLSearchParams(query || '');
+    const startVideo = parseInt(params.get('v'), 10) - 1;
+    const startTime = parseInt(params.get('t'), 10);
+    el.appendChild(buildSessionViewer(videoItems, photoItems, {
+      routeBase,
+      className: session.className,
+      startVideo: Number.isNaN(startVideo) ? -1 : startVideo,
+      startTime: Number.isNaN(startTime) ? 0 : startTime
+    }));
+    // 적용한 뒤에는 주소창을 수업 주소로 되돌린다. 남겨 두면 다른 영상을 보다 새로고침해도 링크 시각으로 돌아간다
+    if (query) history.replaceState(null, '', `#${routeBase}`);
+  }
 
   showView('view-materials');
   updateDisciplineSwitcher(discipline);
 }
 
-registerRoute(/^\/(?<discipline>music|dance|trad|art)\/(?<program>workshop|mentoring|camp)\/(?<sessionId>[^/]+)$/, ({ discipline, program, sessionId }) => renderMaterialsView(discipline, program, decodeURIComponent(sessionId)));
+registerRoute(
+  /^\/(?<discipline>music|dance|trad|art)\/(?<program>workshop|mentoring|camp)\/(?<sessionId>[^/?]+)(?:\?(?<query>.*))?$/,
+  ({ discipline, program, sessionId, query }) => renderMaterialsView(discipline, program, decodeURIComponent(sessionId), query)
+);
