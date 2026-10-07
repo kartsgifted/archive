@@ -92,7 +92,11 @@ function enterApp(firstView) {
   appScreen.classList.remove('hidden');
   scheduleTokenRenewal();
   renderDisciplineSwitcher();
-  routeFromFirstView(firstView);
+  // 받은 링크(예: 시각 링크)로 들어와 로그인한 경우 그 화면으로 이어 간다.
+  // 주소가 비어 있을 때만 접근코드의 첫 화면으로 보낸다(로그아웃하면 주소를 비운다).
+  const hash = location.hash.replace(/^#/, '');
+  if (hash && hash !== '/') handleRouteChange();
+  else routeFromFirstView(firstView);
 }
 
 // 상단바 분야 전환: 코드 종류와 무관하게 언제든 다른 분야로 이동 가능해야 한다
@@ -142,6 +146,7 @@ function logout() {
   clearToken();
   AppState.data = null;
   closeMaterialModal(); // 모달은 앱 화면 밖에 있어, 토큰 만료로 로그아웃되면 사진이 로그인 화면 위에 남는다
+  clearSessionViewer(); // 수업 자료 화면의 플레이어·사진도 지운다
   clearPhotoCache();    // 미리 받아 둔 사진을 메모리에서 비운다
   appScreen.classList.add('hidden');
   gateScreen.classList.remove('hidden');
@@ -155,6 +160,8 @@ document.getElementById('brand-home').addEventListener('click', () => navigate('
 
 /* ---------- 화면 공통 헬퍼 ---------- */
 function showView(id) {
+  // 수업 자료 화면을 떠나면 열람기를 지운다. 숨기기만 하면 재생 중인 영상 소리가 계속 난다.
+  if (id !== 'view-materials') clearSessionViewer();
   document.querySelectorAll('main .view').forEach(el => el.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
