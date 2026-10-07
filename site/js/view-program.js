@@ -32,9 +32,17 @@ function renderProgramView(discipline) {
   const grid = document.createElement('div');
   grid.className = 'program-grid';
 
+  // 이 분야에 「일정」이 하나도 없는 프로그램은 카드를 막고 「준비중」으로 둔다(2026-10-07 차장님 요청).
+  // 시트에 일정을 넣으면 코드 수정 없이 다시 열린다. 자료를 받기 전에는 판단할 수 없어 열어 두고,
+  // 자료가 도착하면 화면을 다시 그릴 때 반영된다(app.js loadAppDataInBackground).
+  const disciplineKr = Object.keys(DISCIPLINE_SLUG).find(k => DISCIPLINE_SLUG[k] === discipline);
+  const hasSessions = p => !AppState.data ||
+    AppState.data.sessions.some(s => s.discipline === disciplineKr && s.program === p.name);
+
   PROGRAM_INFO.forEach(p => {
+    const ready = hasSessions(p);
     const tile = document.createElement('div');
-    tile.className = 'tile';
+    tile.className = 'tile' + (ready ? '' : ' disabled');
     tile.style.setProperty('--c', info.color);
 
     const img = document.createElement('img');
@@ -54,8 +62,17 @@ function renderProgramView(discipline) {
     name.textContent = p.name;
     content.append(eng, name);
 
-    tile.append(img, scrim, createBrackets(), content);
-    tile.addEventListener('click', () => navigate(`#/${discipline}/${p.slug}`));
+    if (ready) {
+      tile.append(img, scrim, createBrackets(), content);
+      tile.addEventListener('click', () => navigate(`#/${discipline}/${p.slug}`));
+    } else {
+      const pending = document.createElement('div');
+      pending.className = 'tile-meta';
+      pending.textContent = '준비중';
+      content.appendChild(pending);
+      tile.setAttribute('aria-disabled', 'true');
+      tile.append(img, scrim, content);
+    }
     grid.appendChild(tile);
   });
 
