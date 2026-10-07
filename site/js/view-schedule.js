@@ -1,6 +1,6 @@
 /**
  * 일정표 화면 3종. docs/screens.md 5절: 프로그램마다 레이아웃이 다르다.
- * - 워크숍: 일자 × 시간대 격자 (30분 슬롯 매트릭스 + rowSpan, 기존 index.html buildScheduleTable() 재활용)
+ * - 워크숍: 일자 × 시간대 격자 (30분 칸마다 그 시각에 시작하는 수업을 나열, 이어지는 칸은 옅게 — 2026-10-07 변경)
  * - 심화 멘토링: 권역(열) × 회차(행) 격자 (2026-09-17 결정, docs/screens.md 5절)
  * - 겨울 심화캠프: 일자별 카드
  * 자료 보유 여부는 AppState.data.materials를 세션ID로 대조해 계산한다 (관문 재요청 없음, docs/decisions.md 2절).
@@ -47,79 +47,83 @@ function renderScheduleEmptyState() {
   return wrap;
 }
 
-/* ---------- 격자 칸 / 카드 공통 ---------- */
-function buildSessionCell(session, discipline, program) {
+/* ---------- 격자 칸 / 카드 / 칸 안 항목 공통 ---------- */
+// 수업명 · 강사·장소 · 비고 · 자료 상태를 el 안에 채우고, 누르면 자료 화면으로 간다.
+// timeLabel이 있으면 맨 위에 시간(또는 일자·시간)을 적는다.
+function fillSession(el, session, discipline, program, timeLabel) {
   const count = materialCountBySession(session.sessionId);
-  const td = document.createElement('td');
-  td.className = 'cell-session' + (count > 0 ? ' has-materials' : '');
+  if (count > 0) el.classList.add('has-materials');
+
+  if (timeLabel) {
+    const time = document.createElement('div');
+    time.className = 'session-time';
+    time.textContent = timeLabel;
+    el.appendChild(time);
+  }
 
   const name = document.createElement('div');
   name.className = 'cell-class';
   name.textContent = session.className;
-  td.appendChild(name);
+  el.appendChild(name);
 
   const { location, remark } = parseNote(session.note);
-  const sub = document.createElement('div');
-  sub.className = 'cell-sub';
-  sub.textContent = [session.instructor, location].filter(Boolean).join(' · ');
-  td.appendChild(sub);
+  const subText = [session.instructor, location].filter(Boolean).join(' · ');
+  if (subText) {
+    const sub = document.createElement('div');
+    sub.className = 'cell-sub';
+    sub.textContent = subText;
+    el.appendChild(sub);
+  }
 
   if (remark) {
     const note = document.createElement('div');
     note.className = 'cell-note';
     note.textContent = remark;
-    td.appendChild(note);
+    el.appendChild(note);
   }
 
   const state = document.createElement('div');
   state.className = 'cell-state' + (count > 0 ? ' ready' : '');
   state.textContent = count > 0 ? `● 자료 ${count}개` : '영상 준비중';
-  td.appendChild(state);
+  el.appendChild(state);
 
-  td.classList.add('clickable');
-  td.addEventListener('click', () => navigate(`#/${discipline}/${program}/${session.sessionId}`));
-  return td;
+  el.classList.add('clickable');
+  el.addEventListener('click', () => navigate(`#/${discipline}/${program}/${session.sessionId}`));
+  return el;
+}
+
+function buildSessionCell(session, discipline, program) {
+  const td = document.createElement('td');
+  td.className = 'cell-session';
+  return fillSession(td, session, discipline, program);
 }
 
 function buildSessionCard(session, discipline, program) {
-  const count = materialCountBySession(session.sessionId);
   const card = document.createElement('div');
-  card.className = 'camp-session' + (count > 0 ? ' has-materials' : '');
+  card.className = 'camp-session';
+  return fillSession(card, session, discipline, program, `${session.startTime}–${session.endTime}`);
+}
 
-  const time = document.createElement('div');
-  time.className = 'camp-session-time';
-  time.textContent = `${session.startTime}–${session.endTime}`;
-  card.appendChild(time);
+// 한 칸에 수업이 여럿일 때: 수업마다 시간을 붙여 위아래로 나열한다 (docs/decisions.md 9절 「같은 분야 동시간대 수업」)
+function buildSessionListCell(items, discipline, program) {
+  const td = document.createElement('td');
+  td.className = 'cell-slot';
+  items.forEach(({ session, label }) => {
+    const item = document.createElement('div');
+    item.className = 'slot-item';
+    td.appendChild(fillSession(item, session, discipline, program, label));
+  });
+  return td;
+}
 
-  const name = document.createElement('div');
-  name.className = 'cell-class';
-  name.textContent = session.className;
-  card.appendChild(name);
-
-  const { location, remark } = parseNote(session.note);
-  const sub = document.createElement('div');
-  sub.className = 'cell-sub';
-  sub.textContent = [session.instructor, location].filter(Boolean).join(' · ');
-  card.appendChild(sub);
-
-  if (remark) {
-    const note = document.createElement('div');
-    note.className = 'cell-note';
-    note.textContent = remark;
-    card.appendChild(note);
-  }
-
-  const state = document.createElement('div');
-  state.className = 'cell-state' + (count > 0 ? ' ready' : '');
-  state.textContent = count > 0 ? `● 자료 ${count}개` : '영상 준비중';
-  card.appendChild(state);
-
-  card.classList.add('clickable');
-  card.addEventListener('click', () => navigate(`#/${discipline}/${program}/${session.sessionId}`));
-  return card;
+// 같은 시각이면 세션ID 끝 순번(…-1000-2) 순서로
+function sessionSeq(s) {
+  return Number(String(s.sessionId || '').split('-').pop()) || 0;
 }
 
 /* ---------- 워크숍: 일자 × 시간대 격자 ---------- */
+// 30분 칸마다 그 칸에서 시작하는 수업을 모두 나열하고, 앞 수업이 이어지는 칸은 옅게 칠한다.
+// 같은 시간에 수업이 최대 12개까지 겹치므로(전통) 칸을 늘이는(rowSpan) 대신 시작 칸에 모은다.
 function buildWorkshopGrid(sessions, discipline, program) {
   const byDate = {};
   sessions.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
@@ -130,25 +134,25 @@ function buildWorkshopGrid(sessions, discipline, program) {
   dates.forEach(date => {
     parsed[date] = byDate[date].map(s => {
       const start = timeToMinutes(s.startTime);
-      const end = timeToMinutes(s.endTime);
+      const end = Math.max(timeToMinutes(s.endTime), start + 1);
       gridStart = Math.min(gridStart, start);
       gridEnd = Math.max(gridEnd, end);
       return { session: s, start, end };
-    }).sort((a, b) => a.start - b.start);
+    }).sort((a, b) => a.start - b.start || sessionSeq(a.session) - sessionSeq(b.session));
   });
   gridStart = Math.floor(gridStart / 30) * 30;
   gridEnd = Math.ceil(gridEnd / 30) * 30;
   const slotCount = Math.max(1, (gridEnd - gridStart) / 30);
 
+  // matrix[date][slot] = { starts: [그 칸에서 시작하는 수업], ongoing: 앞 칸에서 시작한 수업이 이어지는지 }
   const matrix = {};
   dates.forEach(date => {
-    const col = new Array(slotCount).fill(null);
+    const col = Array.from({ length: slotCount }, () => ({ starts: [], ongoing: false }));
     parsed[date].forEach(({ session, start, end }) => {
-      const startSlot = Math.round((start - gridStart) / 30);
-      const span = Math.max(1, Math.round((end - start) / 30));
-      if (startSlot < 0 || startSlot >= slotCount) return;
-      col[startSlot] = { session, span };
-      for (let i = 1; i < span && (startSlot + i) < slotCount; i++) col[startSlot + i] = 'SPANNED';
+      const startSlot = Math.floor((start - gridStart) / 30);
+      const endSlot = Math.ceil((end - gridStart) / 30);
+      col[startSlot].starts.push({ session, label: `${session.startTime}–${session.endTime}` });
+      for (let i = startSlot + 1; i < endSlot && i < slotCount; i++) col[i].ongoing = true;
     });
     matrix[date] = col;
   });
@@ -191,15 +195,14 @@ function buildWorkshopGrid(sessions, discipline, program) {
 
     dates.forEach(date => {
       const cell = matrix[date][slot];
-      if (cell === 'SPANNED') return;
-      if (cell === null) {
-        const td = document.createElement('td');
-        td.className = 'cell-empty';
+      if (cell.starts.length > 0) {
+        const td = buildSessionListCell(cell.starts, discipline, program);
+        if (cell.ongoing) td.classList.add('also-ongoing');
         tr.appendChild(td);
         return;
       }
-      const td = buildSessionCell(cell.session, discipline, program);
-      td.rowSpan = cell.span;
+      const td = document.createElement('td');
+      td.className = cell.ongoing ? 'cell-ongoing' : 'cell-empty';
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -243,10 +246,11 @@ function buildMentoringGrid(sessions, discipline, program) {
     return String(a).localeCompare(String(b), 'ko');
   });
 
+  // 같은 권역·회차에 수업이 여럿이면 한 칸에 일자·시간을 붙여 모두 나열한다 (예전에는 첫 수업만 보였음)
   const cellMap = {};
   sessions.forEach(s => {
     const key = `${s.region}__${s.round}`;
-    if (!cellMap[key]) cellMap[key] = s;
+    (cellMap[key] = cellMap[key] || []).push(s);
   });
 
   const wrap = document.createElement('div');
@@ -280,14 +284,25 @@ function buildMentoringGrid(sessions, discipline, program) {
     roundTd.textContent = `${round}회차`;
     tr.appendChild(roundTd);
     regions.forEach(region => {
-      const session = cellMap[`${region}__${round}`];
-      if (!session) {
+      const list = cellMap[`${region}__${round}`];
+      if (!list) {
         const td = document.createElement('td');
         td.className = 'cell-empty';
         tr.appendChild(td);
         return;
       }
-      tr.appendChild(buildSessionCell(session, discipline, program));
+      if (list.length === 1) {
+        tr.appendChild(buildSessionCell(list[0], discipline, program));
+        return;
+      }
+      const items = list
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date) || timeToMinutes(a.startTime) - timeToMinutes(b.startTime) || sessionSeq(a) - sessionSeq(b))
+        .map(session => {
+          const { month, day } = formatDateLabel(session.date);
+          return { session, label: `${month}.${day} ${session.startTime}–${session.endTime}` };
+        });
+      tr.appendChild(buildSessionListCell(items, discipline, program));
     });
     tbody.appendChild(tr);
   });

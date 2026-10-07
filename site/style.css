@@ -273,6 +273,17 @@ td.cell-session.clickable:hover { background: var(--ink-800); }
 .cell-note { font-size: 11px; font-weight: 500; color: var(--gold-soft); margin-top: 4px; line-height: 1.4; }
 .cell-state { font-family: var(--font-mono); font-weight: 600; font-size: 10px; margin-top: 6px; color: var(--cream-dim); }
 .cell-state.ready { color: var(--gold-soft); }
+/* 한 칸에 수업 여럿(시작 칸에 모아 보여 주기) · 앞 수업이 이어지는 칸 */
+td.cell-slot { padding: 6px; vertical-align: top; background: var(--ink-900); }
+.slot-item { padding: 8px 10px; background: var(--ink-800); border-left: 2px solid var(--line); transition: background .15s ease; }
+.slot-item + .slot-item { margin-top: 6px; }
+.slot-item.clickable { cursor: pointer; }
+.slot-item.clickable:hover { background: var(--ink-700); }
+.slot-item.has-materials { border-left-color: var(--gold-soft); }
+.slot-item .cell-class { margin-bottom: 2px; }
+.slot-item .cell-state { margin-top: 4px; }
+td.cell-ongoing { background: rgba(255, 255, 255, .035); }
+.session-time { font-family: var(--font-mono); font-weight: 600; font-size: 11px; letter-spacing: .05em; color: var(--cream-dim); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
 
 .camp-list { display: flex; flex-direction: column; gap: 28px; }
 .camp-day-head { font-family: var(--font-display); font-weight: 700; font-size: 17px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
@@ -280,12 +291,13 @@ td.cell-session.clickable:hover { background: var(--ink-800); }
 .camp-session { border: 1px solid var(--line-soft); background: var(--ink-900); padding: 14px 16px; transition: background .15s ease; }
 .camp-session.clickable { cursor: pointer; }
 .camp-session.clickable:hover { background: var(--ink-800); }
-.camp-session-time { font-family: var(--font-mono); font-weight: 600; font-size: 11px; letter-spacing: .05em; color: var(--cream-dim); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.camp-session .session-time { margin-bottom: 8px; }
 
 @media (max-width: 720px) {
   table.schedule-grid { min-width: 520px; }
   .cell-class { font-size: 12.5px; }
-  .cell-sub, .cell-state { font-size: 10.5px; }
+  .cell-sub, .cell-state, .session-time { font-size: 10.5px; }
+  .slot-item { padding: 6px 8px; }
 }
 
 /* ---------- 자료 목록 화면 ---------- */
