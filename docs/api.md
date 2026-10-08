@@ -150,6 +150,7 @@
 | `studentName` | 학생명 |
 | `studentId` | 학생ID — 작품(영상)·작품(이미지)이고 동명이인일 때만 값이 있음. 동명이인 구분용(`docs/sheet-schema.md` 13절) |
 | `discipline` | 분야 |
+| `subtitle` | 소제목 — 한 수업 칸 안 영상의 반·악기 이름(「해금2」). 열이 없거나 비면 빈 값 (2026-10-08 추가) |
 
 | `participants[]` | 시트 열 |
 |---|---|

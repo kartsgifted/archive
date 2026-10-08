@@ -1,10 +1,10 @@
 /**
  * 일정표 화면 3종. docs/screens.md 5절: 프로그램마다 레이아웃이 다르다.
- * - 워크숍: 일자 × 시간대 격자 (30분 칸마다 그 시각에 시작하는 수업을 나열, 이어지는 칸은 옅게 — 2026-10-07 변경)
+ * - 워크숍: 일자 × 시간대 격자. 실제 일정표처럼 수업 칸을 길이만큼 세로로 늘이고, 같은 시간 수업은 좌우로 나눈다 (2026-10-08 변경)
  * - 심화 멘토링: 권역(열) × 회차(행) 격자 (2026-09-17 결정, docs/screens.md 5절)
  * - 겨울 심화캠프: 일자별 카드
  * 자료 보유 여부는 AppState.data.materials를 세션ID로 대조해 계산한다 (관문 재요청 없음, docs/decisions.md 2절).
- * 자료가 없는 칸/카드는 "자료 없음"만 표시하고 클릭해도 이동하지 않는다 (docs/screens.md 5절).
+ * 자료가 없는 칸(점심·등록·개별 연습 등)은 흐리게 두고 누를 수 없다 (2026-10-08, 부실장님 피드백).
  */
 const WEEKDAY_KR = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -19,8 +19,14 @@ function formatDateLabel(dateStr) {
 }
 
 function materialCountBySession(sessionId) {
-  if (!AppState.data || !sessionId) return 0;
-  return AppState.data.materials.filter(m => m.sessionId === sessionId).length;
+  const counts = { video: 0, photo: 0 };
+  if (!AppState.data || !sessionId) return counts;
+  AppState.data.materials.forEach(m => {
+    if (m.sessionId !== sessionId) return;
+    if (m.type === '영상') counts.video++;
+    else if (m.type === '사진' || m.type === '사진묶음') counts.photo++;
+  });
+  return counts;
 }
 
 // 「일정」 탭에 정식 "장소" 열이 없어 비고에 "장소: {장소} · {비고}" 형태로 함께 적는다
@@ -48,11 +54,13 @@ function renderScheduleEmptyState() {
 }
 
 /* ---------- 격자 칸 / 카드 / 칸 안 항목 공통 ---------- */
-// 수업명 · 강사·장소 · 비고 · 자료 상태를 el 안에 채우고, 누르면 자료 화면으로 간다.
+// 수업명 · 강사·장소 · 비고 · 자료 상태를 el 안에 채우고, 자료가 있으면 누를 때 자료 화면으로 간다.
+// 자료가 없으면 흐리게(idle) 두고 누를 수 없다 — 점심·등록 칸을 눌러 보는 헛걸음을 없앤다(2026-10-08).
 // timeLabel이 있으면 맨 위에 시간(또는 일자·시간)을 적는다.
 function fillSession(el, session, discipline, program, timeLabel) {
-  const count = materialCountBySession(session.sessionId);
-  if (count > 0) el.classList.add('has-materials');
+  const { video, photo } = materialCountBySession(session.sessionId);
+  const hasMaterials = video + photo > 0;
+  el.classList.add(hasMaterials ? 'has-materials' : 'idle');
 
   if (timeLabel) {
     const time = document.createElement('div');
@@ -82,9 +90,11 @@ function fillSession(el, session, discipline, program, timeLabel) {
     el.appendChild(note);
   }
 
+  if (!hasMaterials) return el;
+
   const state = document.createElement('div');
-  state.className = 'cell-state' + (count > 0 ? ' ready' : '');
-  state.textContent = count > 0 ? `● 자료 ${count}개` : '영상 준비중';
+  state.className = 'cell-state ready';
+  state.textContent = '● ' + [video ? `영상 ${video}` : '', photo ? `사진 ${photo}` : ''].filter(Boolean).join(' · ');
   el.appendChild(state);
 
   el.classList.add('clickable');
@@ -122,9 +132,46 @@ function sessionSeq(s) {
 }
 
 /* ---------- 워크숍: 일자 × 시간대 격자 ---------- */
-// 30분 칸마다 그 칸에서 시작하는 수업을 모두 나열하고, 앞 수업이 이어지는 칸은 옅게 칠한다.
-// 같은 시간에 수업이 최대 12개까지 겹치므로(전통) 칸을 늘이는(rowSpan) 대신 시작 칸에 모은다.
+// 받은 실제 일정표(2026-10-08)처럼 수업 칸을 길이만큼 세로로 늘이고(rowSpan),
+// 같은 시간에 열린 수업은 그 날짜 열을 좌우로 나눠 나란히 그린다(colSpan).
+// 「일정」이 실제 일정표 칸 단위라 같은 시간 수업은 최대 2개다. 겹치는 수업끼리 한 묶음으로 보고,
+// 묶음 안에서 세션ID 순번(왼쪽부터 1, 2) 순서로 줄을 배정한다. 겹치는 게 없는 수업은 열 전체를 쓴다.
+function assignLanes(items) {
+  const clusters = [];
+  let current = null, clusterEnd = -Infinity;
+  items.forEach(it => {
+    if (!current || it.start >= clusterEnd) { current = []; clusters.push(current); clusterEnd = -Infinity; }
+    current.push(it);
+    clusterEnd = Math.max(clusterEnd, it.end);
+  });
+  clusters.forEach(cluster => {
+    const laneEnds = [];
+    cluster.forEach(it => {
+      let lane = laneEnds.findIndex(end => end <= it.start);
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(0); }
+      laneEnds[lane] = it.end;
+      it.lane = lane;
+    });
+    cluster.forEach(it => { it.laneCount = laneEnds.length; });
+  });
+  return Math.max(1, ...items.map(it => it.laneCount || 1));
+}
+
+// 칸 색: 원본 일정표처럼 수업마다 색을 다르게 하고, 같은 수업은 날짜가 달라도 같은 색으로 둔다(2026-10-08).
+// 괄호와 끝의 A/B는 떼고 묶는다 — 특강(초등)·특강(중고등), 융합창작 A·B가 같은 색. 색상(hue)만 정하고 밝기는 CSS가 정한다.
+const SESSION_TONES = [265, 175, 28, 212, 340, 145, 48, 192, 300, 100];
+
+function createToneMap() {
+  const map = {};
+  return name => {
+    const key = String(name || '').replace(/\(.*?\)/g, '').replace(/\s+[A-Z]$/, '').trim();
+    if (!(key in map)) map[key] = SESSION_TONES[Object.keys(map).length % SESSION_TONES.length];
+    return map[key];
+  };
+}
+
 function buildWorkshopGrid(sessions, discipline, program) {
+  const toneOf = createToneMap();
   const byDate = {};
   sessions.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
   const dates = Object.keys(byDate).sort();
@@ -144,23 +191,44 @@ function buildWorkshopGrid(sessions, discipline, program) {
   gridEnd = Math.ceil(gridEnd / 30) * 30;
   const slotCount = Math.max(1, (gridEnd - gridStart) / 30);
 
-  // matrix[date][slot] = { starts: [그 칸에서 시작하는 수업], ongoing: 앞 칸에서 시작한 수업이 이어지는지 }
-  const matrix = {};
+  // 날짜마다 열 개수(나란한 수업 수)를 정하고, 칸마다 차지하는 행·열 범위를 계산한다.
+  // occupied[date][slot][col]: 앞에서 그린 칸이 늘어나 덮고 있는 자리 → 빈 칸을 그리지 않는다
+  const columns = {}, startsAt = {}, occupied = {};
   dates.forEach(date => {
-    const col = Array.from({ length: slotCount }, () => ({ starts: [], ongoing: false }));
-    parsed[date].forEach(({ session, start, end }) => {
-      const startSlot = Math.floor((start - gridStart) / 30);
-      const endSlot = Math.ceil((end - gridStart) / 30);
-      col[startSlot].starts.push({ session, label: `${session.startTime}–${session.endTime}` });
-      for (let i = startSlot + 1; i < endSlot && i < slotCount; i++) col[i].ongoing = true;
+    const cols = assignLanes(parsed[date]);
+    columns[date] = cols;
+    startsAt[date] = {};
+    occupied[date] = Array.from({ length: slotCount }, () => new Array(cols).fill(false));
+    parsed[date].forEach(it => {
+      const rowStart = Math.floor((it.start - gridStart) / 30);
+      const rowEnd = Math.min(slotCount, Math.max(rowStart + 1, Math.ceil((it.end - gridStart) / 30)));
+      const colStart = Math.floor(it.lane * cols / it.laneCount);
+      const colEnd = Math.floor((it.lane + 1) * cols / it.laneCount);
+      // 30분 칸에 맞춰 반올림하면서 앞 칸과 겹치는 경우(10:15 끝 → 10:30) 뒤 칸을 그리지 않는다
+      if (occupied[date][rowStart][colStart]) return;
+      for (let r = rowStart; r < rowEnd; r++) for (let c = colStart; c < colEnd; c++) occupied[date][r][c] = true;
+      startsAt[date][`${rowStart}:${colStart}`] = { ...it, rowSpan: rowEnd - rowStart, colSpan: colEnd - colStart };
     });
-    matrix[date] = col;
   });
 
   const wrap = document.createElement('div');
   wrap.className = 'schedule-table-wrap';
   const table = document.createElement('table');
-  table.className = 'schedule-grid';
+  table.className = 'schedule-grid workshop-grid';
+
+  // 날짜 열 너비를 똑같이 두고, 나뉜 날짜는 그 안을 다시 똑같이 나눈다(table-layout: fixed)
+  const colgroup = document.createElement('colgroup');
+  const timeCol = document.createElement('col');
+  timeCol.className = 'time-col-width';
+  colgroup.appendChild(timeCol);
+  dates.forEach(date => {
+    for (let c = 0; c < columns[date]; c++) {
+      const col = document.createElement('col');
+      col.style.width = `${100 / dates.length / columns[date]}%`;
+      colgroup.appendChild(col);
+    }
+  });
+  table.appendChild(colgroup);
 
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
@@ -172,6 +240,7 @@ function buildWorkshopGrid(sessions, discipline, program) {
     const { month, day, weekday } = formatDateLabel(date);
     const th = document.createElement('th');
     th.className = 'col-head';
+    th.colSpan = columns[date];
     const main = document.createElement('div');
     main.className = 'col-head-main';
     main.textContent = `DAY ${i + 1}`;
@@ -189,21 +258,31 @@ function buildWorkshopGrid(sessions, discipline, program) {
     const tr = document.createElement('tr');
     const mins = gridStart + slot * 30;
     const timeTd = document.createElement('td');
-    timeTd.className = 'time-col';
+    timeTd.className = 'time-col' + (mins % 60 ? ' half' : '');
     timeTd.textContent = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
     tr.appendChild(timeTd);
 
     dates.forEach(date => {
-      const cell = matrix[date][slot];
-      if (cell.starts.length > 0) {
-        const td = buildSessionListCell(cell.starts, discipline, program);
-        if (cell.ongoing) td.classList.add('also-ongoing');
+      for (let c = 0; c < columns[date]; c++) {
+        const block = startsAt[date][`${slot}:${c}`];
+        if (block) {
+          // 칸(td)은 자리만 잡고, 안에 둥근 카드를 채워 카드 사이에 틈을 둔다(테두리 대신 색으로 구분)
+          const td = document.createElement('td');
+          td.className = 'cell-block';
+          td.rowSpan = block.rowSpan;
+          td.colSpan = block.colSpan;
+          const card = document.createElement('div');
+          card.className = 'block';
+          card.style.setProperty('--h', toneOf(block.session.className));
+          td.appendChild(fillSession(card, block.session, discipline, program, `${block.session.startTime}–${block.session.endTime}`));
+          tr.appendChild(td);
+          continue;
+        }
+        if (occupied[date][slot][c]) continue;
+        const td = document.createElement('td');
+        td.className = 'cell-empty';
         tr.appendChild(td);
-        return;
       }
-      const td = document.createElement('td');
-      td.className = cell.ongoing ? 'cell-ongoing' : 'cell-empty';
-      tr.appendChild(td);
     });
     tbody.appendChild(tr);
   }

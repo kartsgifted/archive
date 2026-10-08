@@ -45,7 +45,8 @@ function getPublicMaterials_() {
       spec: row['규격'],
       studentName: row['학생명'],
       studentId: row['학생ID'],
-      discipline: row['분야']
+      discipline: row['분야'],
+      subtitle: row['소제목'] // 한 칸 안 영상의 반·악기 이름(「해금2」). 열이 없는 시트는 빈 값 (2026-10-08)
     };
   });
 }
