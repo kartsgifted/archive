@@ -10,6 +10,13 @@ function findPerson(key) {
   if (byId.length > 0) return { name: byId[0].name, studentId: key, records: byId };
   const byName = AppState.data.participants.filter(p => p.name === key && !p.studentId);
   if (byName.length > 0) return { name: key, studentId: '', records: byName };
+
+  // 출석부가 아직 없어 「참여자」에는 없고 학생 작품만 있는 학생(2026-10-08).
+  // 참여 클래스 없이 「학생 작품」만 보여 준다. 출석부가 들어오면 위에서 같은 key로 찾힌다.
+  const works = AppState.data.materials.filter(isArtworkMaterial);
+  const workById = works.find(m => m.studentId && m.studentId === key);
+  if (workById) return { name: workById.studentName, studentId: key, records: [] };
+  if (works.some(m => m.studentName === key && !m.studentId)) return { name: key, studentId: '', records: [] };
   return null;
 }
 
@@ -90,6 +97,12 @@ function renderPersonView(key) {
   const historyList = document.createElement('div');
   historyList.className = 'history-list';
   sessions.forEach(s => historyList.appendChild(buildHistoryRow(s)));
+  if (sessions.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'placeholder-note';
+    empty.textContent = '등록된 참여 기록이 없습니다.';
+    historyList.appendChild(empty);
+  }
   el.appendChild(buildPersonSection(`참여 클래스 (${sessions.length})`, historyList));
 
   const classMaterials = AppState.data.materials.filter(m => sessionIds.has(m.sessionId));
@@ -99,10 +112,9 @@ function renderPersonView(key) {
     el.appendChild(buildPersonSection('참여한 클래스 자료', buildMaterialsSection(classVideoItems, classPhotoItems)));
   }
 
-  const artworkVideoItems = AppState.data.materials.filter(m =>
-    m.type === '작품(영상)' && m.studentName === person.name && (m.studentId || '') === (person.studentId || ''));
-  const artworkPhotoItems = AppState.data.materials.filter(m =>
-    m.type === '작품(이미지)' && m.studentName === person.name && (m.studentId || '') === (person.studentId || ''));
+  const isPersonWork = m => isArtworkMaterial(m) && m.studentName === person.name && (m.studentId || '') === (person.studentId || '');
+  const artworkVideoItems = AppState.data.materials.filter(m => m.type === '작품(영상)' && isPersonWork(m));
+  const artworkPhotoItems = AppState.data.materials.filter(m => m.type === '작품(이미지)' && isPersonWork(m));
   if (artworkVideoItems.length > 0 || artworkPhotoItems.length > 0) {
     el.appendChild(buildPersonSection('학생 작품', buildMaterialsSection(artworkVideoItems, artworkPhotoItems)));
   }
