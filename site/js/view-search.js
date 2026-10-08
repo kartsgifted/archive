@@ -1,8 +1,9 @@
 /**
  * 상시 검색 결과 화면. docs/screens.md 8절.
  * data 응답의 sessions·participants·materials를 브라우저에서 필터링한다(관문 재요청 없음).
- * 결과는 사람 · 수업 · 작품 3그룹으로 구분한다. 동명이인은 studentId가 다르면 참여자 탭에서부터
- * 서로 다른 행으로 잡히므로 "사람" 목록에 자연히 별도 항목으로 나뉘어 뜬다(docs/sheet-schema.md 13절).
+ * 결과는 사람 · 수업으로 구분한다. 학생 작품은 학생 이름으로 찾으므로 "사람"(→ 인물 상세의 「학생 작품」)으로
+ * 이어진다(2026-10-08). 동명이인은 studentId가 다르면 서로 다른 사람으로 잡혀 "사람" 목록에
+ * 별도 항목으로 나뉘어 뜬다(docs/sheet-schema.md 13절).
  */
 // 이름이 하나로 특정되는 학생 검색은 인물 상세로 바로 보내므로(renderSearchView),
 // 여기서는 분야·수업명·교강사·장소만 본다. 학생 이름으로 걸리는 수업은 인물 상세의
@@ -14,20 +15,23 @@ function searchSessions(q) {
   });
 }
 
-function searchPeople(q) {
-  const map = new Map();
-  AppState.data.participants.forEach(p => {
-    if (!p.name.toLowerCase().includes(q)) return;
-    const key = p.studentId || p.name;
-    if (!map.has(key)) map.set(key, { name: p.name, studentId: p.studentId, key });
-  });
-  return [...map.values()];
+function isArtworkMaterial(m) {
+  return m.type === '작품(영상)' || m.type === '작품(이미지)';
 }
 
-function searchArtworks(q) {
-  return AppState.data.materials.filter(m =>
-    (m.type === '작품(영상)' || m.type === '작품(이미지)') && m.studentName && m.studentName.toLowerCase().includes(q)
-  );
+// 사람은 「참여자」와 학생 작품의 학생명에서 함께 찾는다. 출석부가 아직 없어 작품만 있는
+// 학생도 같은 방식(한 명이면 인물 상세로 바로, 여럿이면 목록)으로 찾게 하기 위함(2026-10-08).
+// 같은 사람은 학생ID(동명이인일 때) 또는 이름으로 하나로 묶인다.
+function searchPeople(q) {
+  const map = new Map();
+  const add = (name, studentId) => {
+    if (!name || !name.toLowerCase().includes(q)) return;
+    const key = studentId || name;
+    if (!map.has(key)) map.set(key, { name, studentId, key });
+  };
+  AppState.data.participants.forEach(p => add(p.name, p.studentId));
+  AppState.data.materials.forEach(m => { if (isArtworkMaterial(m)) add(m.studentName, m.studentId); });
+  return [...map.values()];
 }
 
 function buildSearchRow(main, sub, onClick) {
@@ -129,31 +133,22 @@ function renderSearchView(query) {
     return;
   }
 
+  // 이름이 하나도 안 걸린 경우. 학생 작품은 학생 이름으로만 찾으므로 위의 "사람"에서 이미
+  // 인물 상세로 이어지고(작품은 인물 상세의 「학생 작품」에 나옴), 여기서는 수업만 남는다.
   const sessions = searchSessions(q);
-  const artworks = searchArtworks(q);
 
-  if (sessions.length === 0 && artworks.length === 0) {
+  if (sessions.length === 0) {
     el.appendChild(renderMaterialsEmptyState('검색 결과가 없습니다', '분야 · 활동명 · 수업명 · 교강사 · 학생 · 장소로 다시 찾아보세요.'));
     showView('view-search');
     return;
   }
 
-  if (sessions.length > 0) {
-    const sessionRows = sessions.map(s => buildSearchRow(
-      s.className,
-      `${s.discipline} · ${s.program} · ${s.date}`,
-      () => { const route = sessionRoute(s); if (route) navigate(route); }
-    ));
-    el.appendChild(buildSearchSection('수업', sessionRows));
-  }
-  if (artworks.length > 0) {
-    const artworkRows = artworks.map(m => buildSearchRow(
-      `${m.studentName} · ${m.fileName || m.type}`,
-      m.type,
-      () => navigate(`#/person/${encodeURIComponent(m.studentId || m.studentName)}`)
-    ));
-    el.appendChild(buildSearchSection('작품', artworkRows));
-  }
+  const sessionRows = sessions.map(s => buildSearchRow(
+    s.className,
+    `${s.discipline} · ${s.program} · ${s.date}`,
+    () => { const route = sessionRoute(s); if (route) navigate(route); }
+  ));
+  el.appendChild(buildSearchSection('수업', sessionRows));
   showView('view-search');
 }
 
