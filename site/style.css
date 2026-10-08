@@ -239,7 +239,8 @@ main { flex: 1; width: 100%; }
   .schedule-hero-content { padding: 0 20px 24px; }
 }
 
-.schedule-table-wrap { overflow: auto; max-height: 68vh; padding-bottom: 8px; -webkit-overflow-scrolling: touch; border: 1px solid var(--line-soft); }
+/* 세로는 사이트 스크롤 하나로만 본다(표 안 세로 스크롤 없음, 2026-10-08). 화면보다 넓을 때(휴대폰)만 표를 옆으로 민다 */
+.schedule-table-wrap { overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; border: 1px solid var(--line-soft); }
 
 /* 모바일에는 스크롤바가 없어 표를 옆으로 밀 수 있다는 단서가 없다.
    오른쪽에 페이드를 깔고, 끝까지 밀면 사라지게 한다. */
@@ -287,7 +288,36 @@ td.cell-slot { padding: 6px; vertical-align: top; background: var(--ink-900); }
 .slot-item.has-materials { border-left-color: var(--gold-soft); }
 .slot-item .cell-class { margin-bottom: 2px; }
 .slot-item .cell-state { margin-top: 4px; }
-td.cell-ongoing { background: rgba(255, 255, 255, .035); }
+/* 워크숍 격자: 실제 일정표처럼 칸을 길이만큼 늘이고 같은 시간 수업은 좌우로 (2026-10-08) */
+table.workshop-grid { table-layout: fixed; }
+table.workshop-grid col.time-col-width { width: 64px; }
+table.workshop-grid tbody tr { height: 34px; }
+table.workshop-grid thead th, table.workshop-grid td.time-col { text-align: center; }
+table.workshop-grid .session-time { font-size: 10px; margin-bottom: 2px; }
+.time-col.half { color: transparent; }
+/* 칸 테두리 대신 둥근 카드 + 카드 사이 틈. 수업마다 색(--h, view-schedule.js createToneMap), 글자는 가운데 (2026-10-08) */
+table.workshop-grid tbody td { border: 0; }
+table.workshop-grid tbody td.time-col { border-top: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
+table.workshop-grid td.cell-empty { background: none; }
+/* height: 1px — 칸 높이를 rowSpan만큼 잡은 뒤 안의 카드가 height: 100%로 꽉 차게 하는 표 셀 요령 */
+table.workshop-grid td.cell-block { padding: 3px; height: 1px; vertical-align: top; }
+.block {
+  height: 100%; min-height: 28px; border-radius: 8px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  transition: background .15s ease;
+}
+.block .cell-class { margin-bottom: 2px; }
+.block .cell-state { margin-top: 6px; }
+.block.has-materials { background: hsl(var(--h) 26% 16%); box-shadow: inset 0 0 0 1px hsl(var(--h) 30% 24%); }
+.block.has-materials:hover { background: hsl(var(--h) 30% 21%); }
+.block.has-materials .cell-class { color: hsl(var(--h) 65% 88%); }
+.block.has-materials .session-time { color: hsl(var(--h) 18% 62%); }
+.block.has-materials .cell-note { color: hsl(var(--h) 35% 72%); }
+.block.has-materials .cell-state.ready { color: hsl(var(--h) 55% 74%); }
+.block.idle { background: rgba(255, 255, 255, .035); }
+/* 자료 없는 칸(점심·등록 등): 흐리게, 누를 수 없음 */
+.cell-session.idle, .slot-item.idle, .camp-session.idle { background: var(--ink-950); }
+.cell-session.idle .cell-class, .slot-item.idle .cell-class, .camp-session.idle .cell-class, .block.idle .cell-class { color: var(--cream-dim); font-weight: 500; }
 .session-time { font-family: var(--font-mono); font-weight: 600; font-size: 11px; letter-spacing: .05em; color: var(--cream-dim); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
 
 .camp-list { display: flex; flex-direction: column; gap: 28px; }
@@ -303,6 +333,9 @@ td.cell-ongoing { background: rgba(255, 255, 255, .035); }
   .cell-class { font-size: 12.5px; }
   .cell-sub, .cell-state, .session-time { font-size: 10.5px; }
   .slot-item { padding: 6px 8px; }
+  /* 나란한 좁은 칸(특강 | 전공실기)에서 「영상 1」이 두 줄로 꺾이지 않게 */
+  .block { padding: 8px 4px; border-radius: 6px; }
+  .block .cell-state { white-space: nowrap; }
 }
 
 /* ---------- 자료 목록 화면 ---------- */

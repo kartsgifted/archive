@@ -484,14 +484,20 @@ function clearSessionViewer() {
 
 // 제목은 파일명 대신 수업명(「오프닝」)으로 보여 주고, 파일명은 아래에 작게 남긴다(2026-10-07).
 // 파일명은 원본 찾기표에서 하드의 원본 위치를 찾는 열쇠라 화면에서 없애지 않는다(docs/decisions.md 9절).
+// 「소제목」(반·악기 이름)이 있으면 그 이름 안에서 번호를 매긴다: 「전공실기 · 해금2 · 영상 1」(2026-10-08).
 function describeBySession(className) {
   return (viewer, type, index, material) => {
     if (material.type === '사진묶음') return { title: className, listLabel: '사진묶음', fileLine: material.fileName || '' };
     const typeKr = type === 'video' ? '영상' : '사진';
-    const numbered = `${typeKr} ${index + 1}`;
+    const list = viewer.lists[type];
+    const sub = material.subtitle || '';
+    const group = list.filter(m => (m.subtitle || '') === sub);
+    const numbered = `${typeKr} ${group.indexOf(material) + 1}`;
+    let label = numbered;
+    if (sub) label = group.length > 1 ? `${sub} · ${numbered}` : sub;
     return {
-      title: viewer.lists[type].length > 1 ? `${className} · ${numbered}` : className,
-      listLabel: numbered,
+      title: list.length > 1 || sub ? `${className} · ${label}` : className,
+      listLabel: label,
       fileLine: material.fileName || ''
     };
   };
